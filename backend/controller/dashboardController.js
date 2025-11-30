@@ -11,7 +11,7 @@ export const getDashboardStats = async (req, res) => {
 
     // 3. Active investors
     const activeInvestments = await Invesment.count({
-      where: { maturityDate: "" },
+      where: { maturityDate: null },
     });
 
     return res.status(200).json({

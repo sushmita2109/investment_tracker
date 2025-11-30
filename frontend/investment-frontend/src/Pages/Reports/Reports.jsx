@@ -70,7 +70,7 @@ export default function Reports() {
 
     // For payouts
     if (reportType === "payout") {
-      setReportData(data.payouts || []);
+      setReportData(data.report || []);
       return;
     }
   };

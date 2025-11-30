@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TextField, Button, Paper, Typography, MenuItem } from "@mui/material";
 
 export default function AddInvesment() {
@@ -10,6 +10,14 @@ export default function AddInvesment() {
     expectedReturnRate: "",
     invesmentDate: "",
   });
+  const [investorList, setInvestorList] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5544/api/investors/all")
+      .then((res) => res.json())
+      .then((data) => setInvestorList(data))
+      .catch((err) => console.error("Error fetching investors:", err));
+  }, []);
 
   const handleSubmit = async () => {
     await fetch("http://localhost:5544/api/invesments/add", {
@@ -26,12 +34,20 @@ export default function AddInvesment() {
       <Typography variant="h6">Add Investment</Typography>
 
       <TextField
+        select
         label="Investor UserID"
         name="investorid"
         fullWidth
         sx={{ mt: 2 }}
+        value={form.investorid || ""}
         onChange={(e) => setForm({ ...form, investorid: e.target.value })}
-      />
+      >
+        {investorList?.map((inv) => (
+          <MenuItem key={inv.userid} value={inv.userid}>
+            {inv.userid}-{inv.firstname}
+          </MenuItem>
+        ))}
+      </TextField>
 
       <TextField
         label="Investment Type"

@@ -395,17 +395,39 @@ export const downloadInterestReportExcel = async (req, res) => {
 
 export const getPayoutReport = async (req, res) => {
   try {
-    const payouts = await Payout.findAll({
-      include: [{ model: Investors, attributes: ["firstname", "lastname"] }],
+    const investors = await Investors.findAll({
+      include: [{ model: Invesment }],
     });
 
-    res.json({ success: true, payouts });
+    if (!investors.length) {
+      return res.json({ success: false, message: "No data found" });
+    }
+
+    const report = [];
+
+    investors.forEach((inv) => {
+      inv.Invesments.forEach((i) => {
+        const amount = Number(i.amount || 0);
+        const tds = amount * 0.1; // 10%
+        const actualAmount = amount - tds;
+
+        report.push({
+          userid: inv.userid,
+          investmentType: i.invesmentType,
+          placeholder_name: `${inv.firstname} ${inv.lastname}`,
+          amount: amount,
+          tds: tds,
+          actualAmount: actualAmount,
+        });
+      });
+    });
+
+    return res.json({ success: true, report });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
+    console.error("Payout Report Error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
-
 export const downloadPayoutReportCSV = async (req, res) => {
   try {
     const { payouts } = req.body;
