@@ -1,7 +1,7 @@
 import express from "express";
 import {
   getOverallSummary,
-  downloadOverallSummaryCSV,
+  downloadOverallSummaryExcel,
   getInvestorReport,
   downloadInvestorReportExcel,
   getInterestReport,
@@ -14,7 +14,7 @@ const router = express.Router();
 
 // ---------------------- OVERALL SUMMARY ----------------------
 router.get("/overall", getOverallSummary);
-router.get("/overall/download", downloadOverallSummaryCSV);
+router.get("/overall/download", downloadOverallSummaryExcel);
 
 // ---------------------- INVESTOR REPORT ---------------------
 router.get("/investor/:investorid", getInvestorReport);

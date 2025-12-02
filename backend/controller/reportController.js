@@ -39,9 +39,9 @@ export const getOverallSummary = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
-
 // ------------------ DOWNLOAD CSV ------------------ //
-export const downloadOverallSummaryCSV = async (req, res) => {
+
+export const downloadOverallSummaryExcel = async (req, res) => {
   try {
     const totalInvestors = await Investors.count();
     const investments = await Invesment.findAll();
@@ -70,22 +70,48 @@ export const downloadOverallSummaryCSV = async (req, res) => {
       },
     ];
 
-    const fields = [
-      "totalInvestors",
-      "totalInvestedAmount",
-      "currentPortfolioValue",
-      "totalReturns",
-    ];
+    // --------------------
+    //  Create Excel File
+    // --------------------
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Overall Summary");
 
-    const parser = new Parser({ fields });
-    const csv = parser.parse(summary);
+    // Add header row
+    worksheet.addRow([
+      "Total Investors",
+      "Total Invested Amount",
+      "Current Portfolio Value",
+      "Total Returns",
+    ]);
 
-    res.header("Content-Type", "text/csv");
-    res.attachment("overall_summary.csv");
-    return res.send(csv);
+    // Add summary row
+    summary.forEach((item) => {
+      worksheet.addRow([
+        item.totalInvestors,
+        item.totalInvestedAmount,
+        item.currentPortfolioValue,
+        item.totalReturns,
+      ]);
+    });
+
+    // Auto column width
+    worksheet.columns.forEach((col) => {
+      col.width = 25;
+    });
+
+    // File name
+    const fileName = "overall_summary.xlsx";
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (err) {
-    console.error("CSV Error:", err);
-    res.status(500).json({ success: false });
+    console.error("Excel Error:", err);
+    res.status(500).json({ success: false, error: "Failed to generate Excel" });
   }
 };
 
@@ -126,12 +152,14 @@ export const getInvestorReport = async (req, res) => {
       } = i.dataValues;
       const monthlyReturn = amount * (rate / 100);
 
-      const startDate = new Date(cleanData.invementDate);
+      const startDate = new Date(cleanData.invesmentDate);
+      // console.log("startDate:", startDate);
       const today = new Date();
 
       let monthsPassed =
         (today.getFullYear() - startDate.getFullYear()) * 12 +
         (today.getMonth() - startDate.getMonth());
+      // console.log("monthsPassed:", monthsPassed);
 
       if (monthsPassed < 0) monthsPassed = 0;
 
@@ -239,7 +267,6 @@ export const downloadInvestorReportExcel = async (req, res) => {
 
 export const getInterestReport = async (req, res) => {
   try {
-    // 1. Get all investors
     const investors = await Investors.findAll();
 
     if (!investors || investors.length === 0) {
@@ -251,19 +278,15 @@ export const getInterestReport = async (req, res) => {
 
     let finalReport = [];
 
-    // Loop through each investor
     for (const investor of investors) {
       const investorid = investor.userid;
 
-      // 2. Get all investments for this investor
       const investmentRows = await Invesment.findAll({
         where: { investorid },
       });
 
-      // If no investments for this investor, skip
       if (!investmentRows.length) continue;
 
-      // 3. Calculate financials for each investment
       const investmentData = investmentRows.map((i) => {
         const amount = Number(i.amount || 0);
         const rate = Number(i.expectedReturnRate || 0);
@@ -279,30 +302,32 @@ export const getInterestReport = async (req, res) => {
 
         const monthlyReturn = amount * (rate / 100);
 
-        const startDate = new Date(cleanData.invementDate);
+        // FIXED: correct field name
+        const startDate = new Date(cleanData.invesmentDate);
+        // console.log("startDate:", startDate);
         const today = new Date();
 
         let monthsPassed =
           (today.getFullYear() - startDate.getFullYear()) * 12 +
           (today.getMonth() - startDate.getMonth());
+        // console.log("monthsPassed:", monthsPassed);
 
-        if (monthsPassed < 0) monthsPassed = 0;
+        if (monthsPassed < 0 || isNaN(monthsPassed)) monthsPassed = 0;
 
         const totalReturnTillDate = monthlyReturn * monthsPassed;
 
-        const tds = totalReturnTillDate * 0.1; // 10%
-
+        const tds = totalReturnTillDate * 0.1;
         const actualPayment = totalReturnTillDate - tds;
 
         return {
           firstname: investor.firstname,
           lastname: investor.lastname,
           investorid: investor.userid,
-          investmentId: cleanData.id,
+          investmentId: id,
           invesmentType: cleanData.invesmentType,
           targetAccountDetails: cleanData.targetAccountDetails,
           amount: cleanData.amount,
-          invementDate: cleanData.invementDate,
+          invesmentDate: cleanData.invesmentDate, // FIX HERE ALSO
           expectedReturnRate: cleanData.expectedReturnRate,
           monthlyReturn,
           monthsPassed,
@@ -312,7 +337,6 @@ export const getInterestReport = async (req, res) => {
         };
       });
 
-      // Push investor block into final report
       finalReport.push({
         investorId: investor.userid,
         firstname: investor.firstname,
@@ -333,7 +357,7 @@ export const getInterestReport = async (req, res) => {
 };
 export const downloadInterestReportExcel = async (req, res) => {
   try {
-    const report = await getInterestReport(); // now safe
+    const report = await getInterestReport();
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Interest Report");
@@ -343,8 +367,8 @@ export const downloadInterestReportExcel = async (req, res) => {
       { header: "Name", key: "name", width: 25 },
       { header: "Investment Type", key: "invesmentType", width: 20 },
       { header: "Amount", key: "amount", width: 15 },
-      { header: "Investment Date", key: "invementDate", width: 20 },
-      { header: "Rate (%)", key: "rate", width: 10 },
+      { header: "Investment Date", key: "invesmentDate", width: 20 }, // FIXED
+      { header: "Rate (%)", key: "expectedReturnRate", width: 10 },
       { header: "Monthly Return", key: "monthlyReturn", width: 20 },
       {
         header: "Total Return Till Date",
@@ -359,19 +383,20 @@ export const downloadInterestReportExcel = async (req, res) => {
       inv.investments.forEach((i) => {
         sheet.addRow({
           investorId: inv.investorId,
-          name: inv.firstname + " " + inv.lastname,
+          name: `${inv.firstname} ${inv.lastname}`,
           invesmentType: i.invesmentType,
           amount: i.amount,
-          invementDate: i.invementDate,
-          rate: i.expectedReturnRate,
-          monthlyReturn: i.monthlyReturn,
-          totalReturnTillDate: i.totalReturnTillDate,
-          tds: i.tds,
-          actualPayment: i.actualPayment,
+          invesmentDate: i.invesmentDate, // FIXED KEY
+          expectedReturnRate: i.expectedReturnRate,
+          monthlyReturn: i.monthlyReturn ?? 0,
+          totalReturnTillDate: i.totalReturnTillDate ?? 0,
+          tds: i.tds ?? 0,
+          actualPayment: i.actualPayment ?? 0,
         });
       });
     });
 
+    // Set headers
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -384,11 +409,10 @@ export const downloadInterestReportExcel = async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (err) {
-    console.error(err);
+    console.error("Excel error:", err);
     res.status(500).json({ error: "Failed to create Excel" });
   }
 };
-
 /* ======================================================
    4. PAYOUT REPORT
 ====================================================== */
@@ -408,7 +432,7 @@ export const getPayoutReport = async (req, res) => {
     investors.forEach((inv) => {
       inv.Invesments.forEach((i) => {
         const amount = Number(i.amount || 0);
-        const tds = amount * 0.1; // 10%
+        const tds = (amount * 10) / 100; // 10%
         const actualAmount = amount - tds;
 
         report.push({
