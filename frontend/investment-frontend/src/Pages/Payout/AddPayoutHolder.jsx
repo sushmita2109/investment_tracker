@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TextField, Button, Paper, Typography, MenuItem } from "@mui/material";
 
 export default function AddPayoutHolder() {
@@ -11,6 +11,14 @@ export default function AddPayoutHolder() {
     accountType: "savings",
     amount: "",
   });
+  const [investorList, setInvestorList] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5544/api/investors/all")
+      .then((res) => res.json())
+      .then((data) => setInvestorList(data))
+      .catch((err) => console.error("Error fetching investors:", err));
+  }, []);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,13 +45,20 @@ export default function AddPayoutHolder() {
       <Typography variant="h6">Add Payout Holder Details</Typography>
 
       <TextField
-        name="investorid"
+        select
         label="Investor UserID"
+        name="investorid"
         fullWidth
         sx={{ mt: 2 }}
-        value={form.investorid}
-        onChange={handleChange}
-      />
+        value={form.investorid || ""}
+        onChange={(e) => setForm({ ...form, investorid: e.target.value })}
+      >
+        {investorList?.map((inv) => (
+          <MenuItem key={inv.userid} value={inv.userid}>
+            {inv.userid}-{inv.firstname}
+          </MenuItem>
+        ))}
+      </TextField>
 
       <TextField
         name="holderName"

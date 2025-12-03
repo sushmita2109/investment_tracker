@@ -176,7 +176,7 @@ export const getInvestorReport = async (req, res) => {
         invesmentType: cleanData.invesmentType,
         targetAccountDetails: cleanData.targetAccountDetails,
         amount: cleanData.amount,
-        invementDate: cleanData.invementDate,
+        invementDate: cleanData.invesmentDate,
         expectedReturnRate: cleanData.expectedReturnRate,
         monthlyReturn,
         totalReturnTillDate,
