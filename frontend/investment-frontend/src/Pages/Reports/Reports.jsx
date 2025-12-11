@@ -17,12 +17,30 @@ import {
   InputLabel,
   TableContainer,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 export default function Reports() {
   const [reportType, setReportType] = useState("");
   const [investors, setInvestors] = useState([]);
   const [selectedInvestor, setSelectedInvestor] = useState("");
   const [reportData, setReportData] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const MONTH_NAMES = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   // Load investors
   const loadInvestors = async () => {
@@ -44,6 +62,20 @@ export default function Reports() {
       url = `/api/reports/investor/${selectedInvestor}`;
     if (reportType === "interest") url = "/api/reports/interest";
     if (reportType === "payout") url = "/api/reports/payout";
+    if (reportType === "payoutInvestor" && selectedInvestor) {
+      const monthIndex = selectedMonth?.month();
+      const month = MONTH_NAMES[monthIndex];
+      const year = selectedMonth?.year();
+
+      url = `/api/reports/payout/investor/${selectedInvestor}?month=${month}&year=${year}`;
+    }
+    if (reportType === "payoutAll") {
+      const monthIndex = selectedMonth?.month();
+      const month = MONTH_NAMES[monthIndex];
+      const year = selectedMonth?.year();
+
+      url = `/api/reports/payout/investors?month=${month}&year=${year}`;
+    }
 
     const res = await fetch("http://localhost:5544" + url);
     const data = await res.json();
@@ -73,6 +105,17 @@ export default function Reports() {
       setReportData(data.report || []);
       return;
     }
+
+    if (reportType === "payoutInvestor") {
+      setReportData(data.report || []);
+      // console.log("Payout Investor Report Data:", data);
+      return;
+    }
+    if (reportType === "payoutAll") {
+      setReportData(data.report || []);
+      // console.log("Payout Investor Report Data:", data);
+      return;
+    }
   };
 
   // ------------------------ DOWNLOAD CSV ---------------------------
@@ -99,6 +142,27 @@ export default function Reports() {
       return;
     }
 
+    if (reportType === "payoutInvestor" && selectedInvestor) {
+      const monthIndex = selectedMonth?.month();
+      const month = MONTH_NAMES[monthIndex];
+      const year = selectedMonth?.year();
+
+      window.open(
+        `http://localhost:5544/api/reports/payout/investor/${selectedInvestor}/download?month=${month}&year=${year}`
+      );
+      return;
+    }
+    if (reportType === "payoutAll") {
+      const monthIndex = selectedMonth?.month();
+      const month = MONTH_NAMES[monthIndex];
+      const year = selectedMonth?.year();
+
+      window.open(
+        `http://localhost:5544/api/reports/payout/investors/download?month=${month}&year=${year}`
+      );
+      return;
+    }
+
     alert("Select a report type first.");
   };
   // ------------------------------------------------------------------
@@ -122,7 +186,6 @@ export default function Reports() {
         <InputLabel id="select-report-type">Select Report Type</InputLabel>
         <Select
           label="select-report-type"
-          select
           value={reportType}
           onChange={(e) => setReportType(e.target.value)}
           sx={{
@@ -133,10 +196,14 @@ export default function Reports() {
           <MenuItem value="investor">Investor-wise Report</MenuItem>
           <MenuItem value="interest">Interest Report</MenuItem>
           <MenuItem value="payout">Payout Report</MenuItem>
+          <MenuItem value="payoutInvestor">
+            Payout Report (Individual Investor)
+          </MenuItem>
+          <MenuItem value="payoutAll">Payout Report (All Investors)</MenuItem>
         </Select>
 
         {/* Investor Dropdown */}
-        {reportType === "investor" && (
+        {(reportType === "investor" || reportType === "payoutInvestor") && (
           <TextField
             sx={{ mt: 2 }}
             label="Select Investor"
@@ -151,6 +218,18 @@ export default function Reports() {
               </MenuItem>
             ))}
           </TextField>
+        )}
+        {/* Month Picker - Optional */}
+        {(reportType === "payoutInvestor" || reportType === "payoutAll") && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              views={["year", "month"]}
+              label="Select Month & Year"
+              value={selectedMonth}
+              onChange={(newValue) => setSelectedMonth(newValue)}
+              slotProps={{ textField: { fullWidth: true, sx: { mt: 2 } } }}
+            />
+          </LocalizationProvider>
         )}
       </FormControl>
       <Box sx={{ display: "flex", flexDirection: "row", gap: 2 }}>

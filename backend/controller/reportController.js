@@ -454,7 +454,9 @@ export const getPayoutReport = async (req, res) => {
 };
 export const downloadPayoutReportCSV = async (req, res) => {
   try {
-    const { payouts } = req.body;
+    const payouts = await Payout.findAll({
+      include: [{ model: Investors }],
+    });
 
     const fields = ["investorid", "name", "amount", "date"];
 
@@ -472,6 +474,327 @@ export const downloadPayoutReportCSV = async (req, res) => {
     res.attachment("payout_report.csv");
     return res.send(csv);
   } catch (err) {
-    console.error(err);
+    console.error("CSV Error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+
+export const getPayoutReportForInvestor = async (req, res) => {
+  try {
+    // console.log("➡ Entered getPayoutReportForInvestor()");
+    // console.log("Investor ID:", req.params.investorid);
+    const { investorid } = req.params;
+    const { month, year } = req.query;
+    console.log("Received month:", month, "year:", year);
+    // console.log("Investor ID:", investorid);
+
+    // 1. Find investor
+    const investor = await Investors.findOne({
+      where: { userid: investorid },
+    });
+    // console.log("Investor:", investor);
+
+    if (!investor) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor not found",
+      });
+    }
+
+    // 2. Get all investments for this investor
+    const investments = await Invesment.findAll({
+      where: { investorid },
+    });
+
+    // 3. Get all payouts for this investor
+    const payouts = await Payout.findAll({
+      where: { investorid },
+    });
+
+    // 4. Prepare Report Format
+    let report = [];
+
+    for (const inv of investments) {
+      const amount = Number(inv.amount || 0);
+      const rate = Number(inv.expectedReturnRate || 0);
+      const monthlyInterest = amount * (rate / 100);
+
+      let payoutAmount = 0;
+
+      // CASE 1: If investment type is "own" → payout = monthly interest
+      if (inv.invesmentType === "own") {
+        payoutAmount = monthlyInterest;
+      }
+      // CASE 2: Otherwise → payout = amount paid in payout table
+      else {
+        const matchedPayout = payouts.find((p) => p.investorid === investorid);
+        payoutAmount = matchedPayout ? matchedPayout.amount : 0;
+      }
+
+      const tds = payoutAmount * 0.1;
+      const actualAmount = payoutAmount - tds;
+
+      report.push({
+        userid: investor.userid,
+        investorName: investor.firstname + " " + investor.lastname,
+        investmentType: inv.invesmentType,
+        amount: payoutAmount,
+        tds,
+        actualAmount,
+        paidmonth: `${month}-${year}`,
+      });
+    }
+
+    return res.json({
+      success: true,
+      payoutsCount: payouts.length,
+      report,
+    });
+  } catch (err) {
+    console.log("Payout Report Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const downloadPayoutReportForInvestorExcel = async (req, res) => {
+  try {
+    const { investorid } = req.params;
+    const { month, year } = req.query;
+    console.log("DOWNLOAD month:", month, "year:", year);
+
+    // 1. Find investor
+    const investor = await Investors.findOne({
+      where: { userid: investorid },
+    });
+
+    if (!investor) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor not found",
+      });
+    }
+
+    // 2. Fetch investments
+    const investments = await Invesment.findAll({
+      where: { investorid },
+    });
+
+    // 3. Fetch payouts (optional for summary)
+    const payouts = await Payout.findAll({
+      where: { investorid },
+    });
+
+    // 4. Prepare Excel data
+    const rows = payouts.map((payout) => {
+      const amount = Number(payout.amount || 0);
+      const tds = amount * 0.1; // 10% TDS
+      const actualAmount = amount - tds;
+
+      return {
+        investorName: investor.firstname + " " + investor.lastname,
+        investmentType: investments
+          .filter((inv) => inv.investorid === investorid)
+          .map((inv) => inv.invesmentType)
+          .join(", "),
+        holderName: payout.holderName,
+        Amount: amount,
+        TDS: tds,
+        ActualAmount: actualAmount,
+        paidmonth: month + "-" + year,
+      };
+    });
+
+    // 5. Create Excel Workbook
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Payout Report");
+
+    sheet.columns = [
+      { header: "Holder Name", key: "holderName", width: 20 },
+      { header: "Amount", key: "Amount", width: 15 },
+      { header: "TDS (10%)", key: "TDS", width: 15 },
+      { header: "Actual Amount", key: "ActualAmount", width: 18 },
+      { header: "Paid Month", key: "paidmonth", width: 15 },
+    ];
+
+    // Add rows
+    rows.forEach((r) => sheet.addRow(r));
+
+    // Style header row
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: "center" };
+    });
+
+    // Response Headers
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=payout_report_${investorid}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error("Excel Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate Excel file",
+    });
+  }
+};
+
+export const getPayoutReportForAllInvestors = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    console.log("Received month:", month, "year:", year);
+
+    // 1. Fetch all investors
+    const investors = await Investors.findAll();
+
+    // 2. Fetch all investments
+    const investments = await Invesment.findAll();
+
+    // 3. Fetch all payouts (filtered by month/year if required)
+    const payouts = await Payout.findAll();
+
+    // Build a map for quick lookup: investmentType per investor
+    const investmentTypeMap = {};
+    investments.forEach((inv) => {
+      if (!investmentTypeMap[inv.investorid]) {
+        investmentTypeMap[inv.investorid] = [];
+      }
+      investmentTypeMap[inv.investorid].push(inv.invesmentType);
+    });
+
+    // 4. Prepare final report
+    let report = [];
+
+    payouts.forEach((payout) => {
+      const investor = investors.find(
+        (inv) => inv.userid === payout.investorid
+      );
+
+      if (!investor) return; // skip invalid
+
+      const amount = Number(payout.amount || 0);
+      const tds = amount * 0.1; // 10% TDS
+      const actualAmount = amount - tds;
+
+      report.push({
+        userid: investor.userid,
+        investorName: investor.firstname + " " + investor.lastname,
+        investmentTypes:
+          investmentTypeMap[investor.userid]?.join(", ") || "N/A",
+        holder_name: payout.holderName,
+        amount,
+        tds,
+        actualAmount,
+        paidmonth: `${month}-${year}`,
+      });
+    });
+
+    return res.json({
+      success: true,
+      totalInvestors: investors.length,
+      totalPayouts: payouts.length,
+      report,
+    });
+  } catch (err) {
+    console.log("Payout All Investors Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+export const downloadPayoutReportForAllInvestorsExcel = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    // 1. Fetch all investors
+    const investors = await Investors.findAll();
+
+    // 2. Fetch all investments
+    const investments = await Invesment.findAll();
+
+    // 3. Fetch all payouts
+    const payouts = await Payout.findAll();
+
+    // Build a map for investment types grouped by investorid
+    const investmentTypeMap = {};
+    investments.forEach((inv) => {
+      if (!investmentTypeMap[inv.investorid]) {
+        investmentTypeMap[inv.investorid] = [];
+      }
+      investmentTypeMap[inv.investorid].push(inv.invesmentType);
+    });
+
+    // 4. Prepare rows for Excel
+    const rows = [];
+
+    payouts.forEach((payout) => {
+      const investor = investors.find(
+        (inv) => inv.userid === payout.investorid
+      );
+      if (!investor) return;
+
+      const amount = Number(payout.amount || 0);
+      const tds = amount * 0.1;
+      const actualAmount = amount - tds;
+
+      rows.push({
+        InvestorID: investor.userid,
+        InvestorName: investor.firstname + " " + investor.lastname,
+        InvestmentTypes:
+          investmentTypeMap[investor.userid]?.join(", ") || "N/A",
+        HolderName: payout.holderName,
+        Amount: amount,
+        TDS: tds,
+        ActualAmount: actualAmount,
+        PaidMonth: `${month}-${year}`,
+      });
+    });
+
+    // 5. Generate Excel with ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Payout Report All");
+
+    sheet.columns = [
+      { header: "Investor ID", key: "InvestorID", width: 15 },
+      { header: "Investor Name", key: "InvestorName", width: 25 },
+      { header: "Investment Types", key: "InvestmentTypes", width: 25 },
+      { header: "Holder Name", key: "HolderName", width: 20 },
+      { header: "Amount", key: "Amount", width: 15 },
+      { header: "TDS (10%)", key: "TDS", width: 12 },
+      { header: "Actual Amount", key: "ActualAmount", width: 15 },
+      { header: "Paid Month", key: "PaidMonth", width: 12 },
+    ];
+
+    rows.forEach((r) => sheet.addRow(r));
+
+    // Make header bold
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: "center" };
+    });
+
+    // 6. Send file to client
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=payout_all_investors_${month}_${year}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error("Excel Download Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate Excel file",
+    });
   }
 };

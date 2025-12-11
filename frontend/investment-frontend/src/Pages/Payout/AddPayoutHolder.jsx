@@ -12,6 +12,7 @@ export default function AddPayoutHolder() {
     amount: "",
   });
   const [investorList, setInvestorList] = useState([]);
+  const [investmentList, setInvestmentList] = useState([]);
 
   useEffect(() => {
     fetch("http://localhost:5544/api/investors/all")
@@ -19,6 +20,30 @@ export default function AddPayoutHolder() {
       .then((data) => setInvestorList(data))
       .catch((err) => console.error("Error fetching investors:", err));
   }, []);
+
+  const loadInvestmentsForInvestor = async (investorid) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5544/api/invesments/${investorid}`
+      );
+      const data = await res.json();
+      setInvestmentList(data.investments || []);
+    } catch (err) {
+      console.log("Error loading investments:", err);
+    }
+  };
+
+  const handleInvestorChange = (e) => {
+    const investorid = e.target.value;
+
+    setForm({
+      ...form,
+      investorid,
+      investmentId: "", // reset investment when investor changes
+    });
+
+    loadInvestmentsForInvestor(investorid);
+  };
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,7 +76,7 @@ export default function AddPayoutHolder() {
         fullWidth
         sx={{ mt: 2 }}
         value={form.investorid || ""}
-        onChange={(e) => setForm({ ...form, investorid: e.target.value })}
+        onChange={handleInvestorChange}
       >
         {investorList?.map((inv) => (
           <MenuItem key={inv.userid} value={inv.userid}>
@@ -61,9 +86,24 @@ export default function AddPayoutHolder() {
       </TextField>
 
       <TextField
+        select
+        name="investmentId"
+        label="Select Invesment Id"
+        value={form.investmentId}
+        onChange={handleChange}
+      >
+        {investmentList.map((inv) => (
+          <MenuItem key={inv.id} value={inv.id}>
+            {inv.id} - {inv.targetAccountDetails} (₹{inv.amount})
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <TextField
         name="holderName"
-        label="Account Holder Name"
+        label="Holder Name"
         fullWidth
+        required
         sx={{ mt: 2 }}
         value={form.holderName}
         onChange={handleChange}

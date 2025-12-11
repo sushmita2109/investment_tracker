@@ -1,4 +1,5 @@
 import Invesment from "../models/Invesment.js";
+import Investors from "../models/Investors.js";
 
 export const addInvesment = async (req, res) => {
   try {
@@ -88,5 +89,36 @@ export const deleteInvestment = async (req, res) => {
   } catch (error) {
     console.error("Error closing investment:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getInvestmentsByInvestor = async (req, res) => {
+  try {
+    const { investorid } = req.params;
+
+    // Check if investor exists
+    const investor = await Investors.findOne({ where: { userid: investorid } });
+    if (!investor) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor not found",
+      });
+    }
+    const investments = await Invesment.findAll({
+      where: { investorid },
+      attributes: { exclude: [] }, // include all fields
+    });
+
+    return res.json({
+      success: true,
+      investor,
+      investments,
+    });
+  } catch (err) {
+    console.error("Get Investments Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

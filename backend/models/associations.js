@@ -21,3 +21,13 @@ Payout.belongsTo(Investors, {
   foreignKey: "investorid",
   targetKey: "userid",
 });
+
+Payout.belongsTo(Invesment, {
+  foreignKey: "investmentId",
+  as: "investment",
+});
+
+Invesment.hasMany(Payout, {
+  foreignKey: "investmentId",
+  as: "payouts",
+});

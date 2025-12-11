@@ -22,6 +22,17 @@ const Payout = sequelize.define(
       onDelete: "CASCADE",
     },
 
+    investmentId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "invesment",
+        key: "id",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "SET NULL",
+    },
+
     holderName: {
       type: DataTypes.STRING,
     },

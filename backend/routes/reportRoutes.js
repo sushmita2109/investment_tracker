@@ -8,6 +8,10 @@ import {
   downloadInterestReportExcel,
   getPayoutReport,
   downloadPayoutReportCSV,
+  getPayoutReportForInvestor,
+  downloadPayoutReportForInvestorExcel,
+  getPayoutReportForAllInvestors,
+  downloadPayoutReportForAllInvestorsExcel,
 } from "../controller/reportController.js";
 
 const router = express.Router();
@@ -25,6 +29,18 @@ router.get("/interest", getInterestReport);
 router.get("/interest/download", downloadInterestReportExcel);
 
 // ---------------------- PAYOUT REPORT -----------------------
+
+router.get("/payout/investors", getPayoutReportForAllInvestors);
+router.get(
+  "/payout/investors/download",
+  downloadPayoutReportForAllInvestorsExcel
+);
+router.get("/payout/investor/:investorid", getPayoutReportForInvestor);
+router.get(
+  "/payout/investor/:investorid/download",
+  downloadPayoutReportForInvestorExcel
+);
+
 router.get("/payout", getPayoutReport);
 router.get("/payout/download", downloadPayoutReportCSV);
 

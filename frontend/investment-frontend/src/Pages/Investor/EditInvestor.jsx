@@ -79,8 +79,7 @@ export default function EditInvestor({ data, onClose, onUpdate }) {
           value={formData.pan}
           onChange={handleChange}
         />
-
-        <TextField
+        {/* <TextField
           name="accountNumber"
           label="Account Number"
           fullWidth
@@ -90,16 +89,15 @@ export default function EditInvestor({ data, onClose, onUpdate }) {
         />
 
         {/* IFSC Code */}
-        <TextField
+        {/* <TextField
           name="ifscCode"
           label="IFSC Code"
           fullWidth
           sx={{ mt: 2 }}
           value={formData.ifscCode || ""}
           onChange={handleChange}
-        />
-
-        <TextField
+        /> */}
+        {/* <TextField
           name="accountType"
           label="Account Type"
           select
@@ -110,7 +108,7 @@ export default function EditInvestor({ data, onClose, onUpdate }) {
         >
           <MenuItem value="savings">Savings</MenuItem>
           <MenuItem value="current">Current</MenuItem>
-        </TextField>
+        </TextField>{" "} */}
       </DialogContent>
 
       <DialogActions>

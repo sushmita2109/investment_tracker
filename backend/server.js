@@ -10,7 +10,7 @@ import payoutRoutes from "./routes/payoutRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 
 const logger = (req, res, next) => {
-  console.log(`URL =================== ${req.url}`);
+  console.log("🔥 Inside reportRoutes:", req.originalUrl);
   next();
 };
 

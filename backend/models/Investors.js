@@ -8,14 +8,27 @@ const Investors = sequelize.define(
     firstname: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
     lastname: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
     phone: {
-      type: DataTypes.STRING,
+      type: DataTypes.NUMBER,
       allowNull: false,
+      validate: {
+        notNull: { msg: "Phone number is required" },
+        is: {
+          args: /^[0-9]{10}$/,
+          msg: "Phone number must contain exactly 10 digits",
+        },
+      },
     },
     email: {
       type: DataTypes.STRING,

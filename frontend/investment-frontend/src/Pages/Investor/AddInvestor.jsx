@@ -9,9 +9,9 @@ export default function AddInvestor() {
     email: "",
     pan: "",
     address: "",
-    accountNumber: "",
-    ifscCode: "",
-    accountType: "savings",
+    // accountNumber: "",
+    // ifscCode: "",
+    // accountType: "savings",
   });
 
   const handleChange = (e) =>
@@ -40,6 +40,7 @@ export default function AddInvestor() {
         id="firstname"
         name="firstname"
         label="First Name"
+        required
         fullWidth
         sx={{ mt: 2 }}
         onChange={handleChange}
@@ -50,6 +51,7 @@ export default function AddInvestor() {
         name="lastname"
         label="Last Name"
         fullWidth
+        required
         sx={{ mt: 2 }}
         onChange={handleChange}
       />
@@ -58,6 +60,7 @@ export default function AddInvestor() {
         id="phone"
         name="phone"
         label="Phone"
+        required
         fullWidth
         sx={{ mt: 2 }}
         onChange={handleChange}
@@ -90,7 +93,7 @@ export default function AddInvestor() {
         onChange={handleChange}
       />
 
-      <TextField
+      {/* <TextField
         id="accountNumber"
         name="accountNumber"
         label="Account Number"
@@ -120,7 +123,7 @@ export default function AddInvestor() {
       >
         <MenuItem value="savings">Savings</MenuItem>
         <MenuItem value="current">Current</MenuItem>
-      </TextField>
+      </TextField> */}
 
       <Button
         variant="contained"
