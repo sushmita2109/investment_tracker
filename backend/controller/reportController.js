@@ -141,7 +141,7 @@ export const getInvestorReport = async (req, res) => {
     // Add monthlyReturn calculation for each investment
     const investments = investmentRows.map((i) => {
       const amount = Number(i.amount || 0);
-      const rate = Number(i.expectedReturnRate || 0); // % per month
+      const rate = Number(i.expectedReturnRate || 0);
       const {
         createdAt,
         updatedAt,
@@ -159,15 +159,15 @@ export const getInvestorReport = async (req, res) => {
       let monthsPassed =
         (today.getFullYear() - startDate.getFullYear()) * 12 +
         (today.getMonth() - startDate.getMonth());
-      // console.log("monthsPassed:", monthsPassed);
+      console.log("monthsPassed:", monthsPassed);
 
       if (monthsPassed < 0) monthsPassed = 0;
 
       const totalReturnTillDate = monthlyReturn * monthsPassed;
 
-      const tds = totalReturnTillDate * 0.1;
+      // const tds = totalReturnTillDate * 0.1;
 
-      const actualPayment = totalReturnTillDate - tds;
+      // const actualPayment = totalReturnTillDate - tds;
 
       return {
         firstname: investor.firstname,
@@ -180,8 +180,8 @@ export const getInvestorReport = async (req, res) => {
         expectedReturnRate: cleanData.expectedReturnRate,
         monthlyReturn,
         totalReturnTillDate,
-        tds,
-        actualPayment,
+        // tds,
+        // actualPayment,
       };
     });
 

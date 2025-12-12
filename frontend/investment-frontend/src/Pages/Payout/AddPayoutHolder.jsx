@@ -88,6 +88,8 @@ export default function AddPayoutHolder() {
       <TextField
         select
         name="investmentId"
+        fullWidth
+        sx={{ mt: 2 }}
         label="Select Invesment Id"
         value={form.investmentId}
         onChange={handleChange}

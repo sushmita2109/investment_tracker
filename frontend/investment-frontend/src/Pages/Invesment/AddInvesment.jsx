@@ -25,8 +25,23 @@ export default function AddInvesment() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+    const data = await res.json();
+    if (data.success) {
+      // Show investment success
+      alert("Investment added!");
 
-    alert("Investment added!");
+      // If auto payout created — show details
+      if (data.autoPayout) {
+        alert(
+          `Auto-Payout Created!\n\n` +
+            `Holder: ${data.autoPayout.holderName}\n` +
+            `Amount: ₹${data.autoPayout.amount}\n` +
+            `Investment ID: ${data.autoPayout.investmentId}`
+        );
+      }
+    } else {
+      alert(data.message || "Failed to add investment.");
+    }
   };
 
   return (

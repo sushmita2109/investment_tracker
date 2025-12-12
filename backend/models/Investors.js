@@ -20,7 +20,7 @@ const Investors = sequelize.define(
       },
     },
     phone: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.STRING(15),
       allowNull: false,
       validate: {
         notNull: { msg: "Phone number is required" },

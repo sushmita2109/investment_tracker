@@ -2,7 +2,6 @@ import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 import Investors from "./Investors.js";
 import Sequelize from "sequelize";
-import Payout from "./Payout.js";
 
 const Invesment = sequelize.define(
   "Invesment",
@@ -57,27 +56,5 @@ const Invesment = sequelize.define(
     tableName: "invesment",
   }
 );
-
-Invesment.afterCreate(async (inv) => {
-  if (inv.targetAccountDetails === "own") {
-    const investor = await Investors.findOne({
-      where: { userid: inv.investorid },
-    });
-
-    const interestAmount =
-      Number(inv.amount) * (Number(inv.expectedReturnRate) / 100);
-
-    await Payout.create({
-      investorid: inv.investorid,
-      investmentId: inv.id, // <-- Important
-      holderName: investor.firstname + " " + investor.lastname,
-      bankName: "",
-      accountNumber: "",
-      ifscCode: "",
-      accountType: "savings",
-      amount: interestAmount,
-    });
-  }
-});
 
 export default Invesment;

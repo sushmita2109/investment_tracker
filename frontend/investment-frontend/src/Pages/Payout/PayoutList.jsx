@@ -49,10 +49,10 @@ export default function PayoutList() {
           <TableRow>
             <TableCell>Investor ID</TableCell>
             <TableCell>Holder Name</TableCell>
-            <TableCell>Bank Name</TableCell>
+            {/* <TableCell>Bank Name</TableCell>
             <TableCell>Account Number</TableCell>
             <TableCell>IFSC Code</TableCell>
-            <TableCell>Account Type</TableCell>
+            <TableCell>Account Type</TableCell> */}
             <TableCell>Amount</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -63,10 +63,10 @@ export default function PayoutList() {
             <TableRow key={p.id}>
               <TableCell>{p.investorid}</TableCell>
               <TableCell>{p.holderName}</TableCell>
-              <TableCell>{p.bankName}</TableCell>
+              {/* <TableCell>{p.bankName}</TableCell>
               <TableCell>{p.accountNumber}</TableCell>
               <TableCell>{p.ifscCode}</TableCell>
-              <TableCell>{p.accountType}</TableCell>
+              <TableCell>{p.accountType}</TableCell> */}
               <TableCell>{p.amount}</TableCell>
 
               <TableCell>

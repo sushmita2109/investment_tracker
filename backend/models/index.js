@@ -6,6 +6,7 @@ import Invesment from "./Invesment.js";
 import Payout from "./Payout.js";
 // Make sure associations are defined
 import "../models/associations.js"; // <-- OPTIONAL (if you put associations in a separate file)
+import registerInvestmentHooks from "../hooks/investmentHooks.js";
 
 const syncDB = async () => {
   try {
@@ -21,4 +22,5 @@ const syncDB = async () => {
 
 syncDB();
 
+registerInvestmentHooks(Invesment);
 export { Admins, Investors, Invesment, Payout }; // <-- EXPORT IT

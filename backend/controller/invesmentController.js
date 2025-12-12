@@ -1,11 +1,19 @@
 import Invesment from "../models/Invesment.js";
 import Investors from "../models/Investors.js";
+import Payout from "../models/Payout.js";
 
 export const addInvesment = async (req, res) => {
   try {
-    console.log("Received body:", req.body);
-    const invesment = await Invesment.create(req.body);
-    res.json({ message: "Invesment added", invesment });
+    // console.log("Received body:", req.body);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const inv = await Invesment.create(req.body);
+
+    const autoPayout = await Payout.findOne({
+      where: { investmentId: inv.id },
+    });
+
+    res.json({ message: "Invesment added", inv, autoPayout });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
