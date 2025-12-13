@@ -1,7 +1,7 @@
 import Login from "./Pages/Login";
 import Signup from "./Pages/Signup";
 import Dashboard from "./Pages/Dashboard";
-import InvestorsPage from "./Pages/Investor/InvestorsPage";
+import InvestorsPage from "./Pages/Investors/InvestorsPage";
 import MainLayout from "./Layouts/MainLayout";
 import { Routes, Route } from "react-router-dom";
 import InvesmentPage from "./Pages/Invesment/InvesmentPage";

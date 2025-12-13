@@ -6,17 +6,22 @@ import {
   TableHead,
   TableRow,
   Button,
+  Box,
+  Typography,
+  Dialog,
 } from "@mui/material";
 import EditPayout from "./EditPayout";
+import AddPayoutHolder from "./AddPayoutHolder";
 
 export default function PayoutList() {
   const [payouts, setPayouts] = useState([]);
   const [editData, setEditData] = useState(null);
+  const [openAdd, setOpenAdd] = useState(false);
 
   const loadPayouts = async () => {
     const res = await fetch("http://localhost:5544/api/payouts/all");
     const data = await res.json();
-    // console.log(data);
+    console.log(data);
     setPayouts(data.data);
   };
 
@@ -35,7 +40,40 @@ export default function PayoutList() {
   //   };
 
   return (
-    <div style={{ width: "100vw", overflowX: "auto", marginTop: "0px" }}>
+    <Box sx={{ width: "100%", overflowX: "auto" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mb: 2,
+          padding: "8px",
+        }}
+      >
+        <Typography variant="h5">Payout List</Typography>
+        <Button
+          variant="contained"
+          onClick={() => setOpenAdd(true)}
+          sx={{ backgroundColor: "black" }}
+        >
+          Add Payout
+        </Button>
+      </Box>
+
+      {/* Add Investor Modal */}
+      <Dialog
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <AddPayoutHolder
+          onSuccess={() => {
+            setOpenAdd(false);
+            loadPayouts();
+          }}
+        />
+      </Dialog>
       {editData && (
         <EditPayout
           data={editData}
@@ -49,10 +87,10 @@ export default function PayoutList() {
           <TableRow>
             <TableCell>Investor ID</TableCell>
             <TableCell>Holder Name</TableCell>
-            {/* <TableCell>Bank Name</TableCell>
-            <TableCell>Account Number</TableCell>
+            <TableCell>Target Account Details</TableCell>
+            {/* <TableCell>Account Number</TableCell>
             <TableCell>IFSC Code</TableCell>
-            <TableCell>Account Type</TableCell> */}
+            <TableCell>Account Type</TableCell>  */}
             <TableCell>Amount</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -63,10 +101,10 @@ export default function PayoutList() {
             <TableRow key={p.id}>
               <TableCell>{p.investorid}</TableCell>
               <TableCell>{p.holderName}</TableCell>
-              {/* <TableCell>{p.bankName}</TableCell>
-              <TableCell>{p.accountNumber}</TableCell>
+              <TableCell>{p.investment?.targetAccountDetails}</TableCell>
+              {/* <TableCell>{p.accountNumber}</TableCell>
               <TableCell>{p.ifscCode}</TableCell>
-              <TableCell>{p.accountType}</TableCell> */}
+              <TableCell>{p.accountType}</TableCell>  */}
               <TableCell>{p.amount}</TableCell>
 
               <TableCell>
@@ -79,6 +117,6 @@ export default function PayoutList() {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </Box>
   );
 }

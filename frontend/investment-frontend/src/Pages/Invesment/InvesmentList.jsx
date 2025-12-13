@@ -6,12 +6,17 @@ import {
   TableHead,
   TableBody,
   Button,
+  Box,
+  Typography,
+  Dialog,
 } from "@mui/material";
 import EditInvestment from "./EditInvesment";
+import AddInvesment from "./AddInvesment";
 
 export default function InvesmentList() {
   const [list, setList] = useState([]);
   const [editData, setEditData] = useState(null);
+  const [openAdd, setOpenAdd] = useState(false);
 
   const load = async () => {
     const res = await fetch("http://localhost:5544/api/invesments/all");
@@ -35,7 +40,40 @@ export default function InvesmentList() {
   };
 
   return (
-    <div style={{ width: "100vw", overflowX: "auto", marginTop: "0px" }}>
+    <Box sx={{ width: "100%", overflowX: "auto" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mb: 2,
+          padding: "8px",
+        }}
+      >
+        <Typography variant="h5">Investment</Typography>
+        <Button
+          variant="contained"
+          onClick={() => setOpenAdd(true)}
+          sx={{ backgroundColor: "black" }}
+        >
+          Add Investment
+        </Button>
+      </Box>
+
+      {/* Add Investor Modal */}
+      <Dialog
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <AddInvesment
+          onSuccess={() => {
+            setOpenAdd(false);
+            load();
+          }}
+        />
+      </Dialog>
       {editData && (
         <EditInvestment
           data={editData}
@@ -48,6 +86,7 @@ export default function InvesmentList() {
           <TableRow>
             <TableCell>Investor</TableCell>
             <TableCell>Invesment Type</TableCell>
+            <TableCell>Target Account Details</TableCell>
             <TableCell>Date</TableCell>
             <TableCell>Amount</TableCell>
             <TableCell>Actions</TableCell>
@@ -59,6 +98,7 @@ export default function InvesmentList() {
             <TableRow key={inv.id}>
               <TableCell>{inv.investorid}</TableCell>
               <TableCell>{inv.invesmentType}</TableCell>
+              <TableCell>{inv.targetAccountDetails}</TableCell>
               <TableCell>{inv.invesmentDate}</TableCell>
               <TableCell>{inv.amount}</TableCell>
               <TableCell>
@@ -71,6 +111,6 @@ export default function InvesmentList() {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </Box>
   );
 }

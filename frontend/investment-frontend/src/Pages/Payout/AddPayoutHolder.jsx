@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { TextField, Button, Paper, Typography, MenuItem } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Paper,
+  Typography,
+  MenuItem,
+  Box,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-export default function AddPayoutHolder() {
+export default function AddPayoutHolder({ onSuccess }) {
   const [form, setForm] = useState({
     investorid: "",
     holderName: "",
@@ -66,7 +75,13 @@ export default function AddPayoutHolder() {
   };
 
   return (
-    <Paper sx={{ padding: 3, width: "50%", margin: "auto" }}>
+    <Paper sx={{ padding: 3, position: "relative" }}>
+      <IconButton
+        onClick={onSuccess}
+        sx={{ position: "absolute", top: 8, right: 8 }}
+      >
+        <CloseIcon />
+      </IconButton>
       <Typography variant="h6">Add Payout Holder Details</Typography>
 
       <TextField
@@ -161,14 +176,24 @@ export default function AddPayoutHolder() {
         onChange={handleChange}
       />
 
-      <Button
-        variant="contained"
-        fullWidth
-        sx={{ mt: 3 }}
-        onClick={handleSubmit}
-      >
-        Add Payout
-      </Button>
+      <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+        <Button
+          variant="contained"
+          sx={{ backgroundColor: "black", flex: 1 }}
+          onClick={handleSubmit}
+        >
+          Add Investment
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="error"
+          sx={{ flex: 1 }}
+          onClick={onSuccess}
+        >
+          Cancel
+        </Button>
+      </Box>
     </Paper>
   );
 }

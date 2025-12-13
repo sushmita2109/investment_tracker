@@ -55,8 +55,8 @@ const Payout = sequelize.define(
     amount: {
       type: DataTypes.FLOAT,
     },
-    paidMonth: {
-      type: DataTypes.STRING,
+    tds: {
+      type: DataTypes.INTEGER,
     },
   },
   {

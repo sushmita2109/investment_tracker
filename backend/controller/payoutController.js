@@ -1,4 +1,5 @@
 import Payout from "../models/Payout.js";
+import Invesment from "../models/Invesment.js";
 
 export const addPayout = async (req, res) => {
   try {
@@ -19,7 +20,22 @@ export const addPayout = async (req, res) => {
 };
 export const getPayoutsByInvestor = async (req, res) => {
   try {
-    const payouts = await Payout.findAll();
+    const payouts = await Payout.findAll({
+      include: [
+        {
+          model: Invesment,
+          as: "investment",
+          attributes: [
+            "id",
+            "invesmentType",
+            "targetAccountDetails",
+            "amount",
+            "expectedReturnRate",
+            "invesmentDate",
+          ],
+        },
+      ],
+    });
 
     res.json({
       success: true,

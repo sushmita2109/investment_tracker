@@ -117,6 +117,15 @@ export default function EditPayout({ data, onClose, onUpdate }) {
           onChange={handleChange}
           sx={{ mt: 2 }}
         />
+        <TextField
+          label="TDS"
+          name="tds"
+          type="number"
+          fullWidth
+          value={form.tds}
+          onChange={handleChange}
+          sx={{ mt: 2 }}
+        />
       </DialogContent>
 
       <DialogActions>
