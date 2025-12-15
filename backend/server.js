@@ -1,22 +1,21 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
-import sequelize from "./config/db.js";
-import dotenv from "dotenv";
+
+
 import investorRoutes from "./routes/investorRoutes.js";
 import invesmentRoutes from "./routes/invesmentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import payoutRoutes from "./routes/payoutRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import { syncDB } from "./models/index.js";
 
 const logger = (req, res, next) => {
-  console.log("🔥 Inside reportRoutes:", req.originalUrl);
+  console.log("🔥 Route:", req.originalUrl);
   next();
 };
-
-dotenv.config();
 const app = express();
-sequelize.sync();
+syncDB()
 app.use(cors());
 app.use(express.json());
 

@@ -1,7 +1,9 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({
+  debug: true,
+});
 
 const isTest = process.env.NODE_ENV === "test";
 

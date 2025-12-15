@@ -14,13 +14,11 @@ const syncDB = async () => {
     console.log(
       "Admins, Investors, Invesment & Payout tables synced successfully!"
     );
-    // process.exit();
   } catch (err) {
     console.error("DB sync error:", err);
   }
 };
 
-syncDB();
 
 registerInvestmentHooks(Invesment);
-export { Admins, Investors, Invesment, Payout }; // <-- EXPORT IT
+export { Admins, Investors, Invesment, Payout, syncDB }; // <-- EXPORT IT
