@@ -96,7 +96,14 @@ export default function InvestorsList() {
         </TableHead>
 
         <TableBody>
-          {investors
+          {investors.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No records found
+              </TableCell>
+            </TableRow>
+          ) :
+          (investors
             .filter((inv) => inv.status === "active")
             .map((inv) => (
               <TableRow key={inv.userid}>
@@ -114,7 +121,7 @@ export default function InvestorsList() {
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
+            )))}
         </TableBody>
       </Table>
     </Box>

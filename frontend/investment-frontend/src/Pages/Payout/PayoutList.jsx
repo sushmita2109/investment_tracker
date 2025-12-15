@@ -97,7 +97,14 @@ export default function PayoutList() {
         </TableHead>
 
         <TableBody>
-          {payouts.map((p) => (
+          {payouts.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No records found
+              </TableCell>
+            </TableRow>
+          ) :
+          (payouts.map((p) => (
             <TableRow key={p.id}>
               <TableCell>{p.investorid}</TableCell>
               <TableCell>{p.holderName}</TableCell>
@@ -114,7 +121,7 @@ export default function PayoutList() {
                 </Button> */}
               </TableCell>
             </TableRow>
-          ))}
+          )))}
         </TableBody>
       </Table>
     </Box>

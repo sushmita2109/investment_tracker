@@ -94,21 +94,32 @@ export default function InvesmentList() {
         </TableHead>
 
         <TableBody>
-          {list.map((inv) => (
-            <TableRow key={inv.id}>
-              <TableCell>{inv.investorid}</TableCell>
-              <TableCell>{inv.invesmentType}</TableCell>
-              <TableCell>{inv.targetAccountDetails}</TableCell>
-              <TableCell>{inv.invesmentDate}</TableCell>
-              <TableCell>{inv.amount}</TableCell>
-              <TableCell>
-                <Button onClick={() => setEditData(inv)}>Edit</Button>
-                <Button color="error" onClick={() => deleteInvestment(inv.id)}>
-                  Complete
-                </Button>
+          {list.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No records found
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            list.map((inv) => (
+              <TableRow key={inv.id}>
+                <TableCell>{inv.investorid}</TableCell>
+                <TableCell>{inv.invesmentType}</TableCell>
+                <TableCell>{inv.targetAccountDetails}</TableCell>
+                <TableCell>{inv.invesmentDate}</TableCell>
+                <TableCell>{inv.amount}</TableCell>
+                <TableCell>
+                  <Button onClick={() => setEditData(inv)}>Edit</Button>
+                  <Button
+                    color="error"
+                    onClick={() => deleteInvestment(inv.id)}
+                  >
+                    Complete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </Box>
