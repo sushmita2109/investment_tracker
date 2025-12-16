@@ -8,6 +8,7 @@ import invesmentRoutes from "./routes/invesmentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import payoutRoutes from "./routes/payoutRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import completePayoutRoutes from "./routes/completePayoutRoutes.js";
 import { syncDB } from "./models/index.js";
 
 const logger = (req, res, next) => {
@@ -26,6 +27,7 @@ app.use("/api/invesments", invesmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payouts", payoutRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/complete-payout", completePayoutRoutes);
 
 app.get("/health-check", (req, res) => {
   res.send("Server is healthy");

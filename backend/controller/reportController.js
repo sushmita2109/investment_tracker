@@ -419,31 +419,48 @@ export const downloadInterestReportExcel = async (req, res) => {
 
 export const getPayoutReport = async (req, res) => {
   try {
-    const investors = await Investors.findAll({
-      include: [{ model: Invesment }],
-    });
+    const payouts = await Payout.findAll({
+  include: [
+    {
+      model: Investors,
+      as: "investor",
+      attributes: ["userid", "firstname", "lastname"],
+    },
+    {
+      model: Invesment,
+      as: "investment",
+      attributes: ["id", "targetAccountDetails"],
+    },
+  ],
+});
 
-    if (!investors.length) {
-      return res.json({ success: false, message: "No data found" });
+     if (!payouts.length) {
+      return res.json({
+        success: false,
+        message: "No payout records found",
+      });
     }
 
-    const report = [];
+    const report = payouts.map((p) => {
+      const amount = Number(p.amount || 0);
+      const tds = amount * 0.1;
+      const actualAmount = amount - tds;
 
-    investors.forEach((inv) => {
-      inv.Invesments.forEach((i) => {
-        const amount = Number(i.amount || 0);
-        const tds = (amount * 10) / 100; // 10%
-        const actualAmount = amount - tds;
 
-        report.push({
-          userid: inv.userid,
-          investmentType: i.invesmentType,
-          placeholder_name: `${inv.firstname} ${inv.lastname}`,
-          amount: amount,
-          tds: tds,
-          actualAmount: actualAmount,
-        });
-      });
+       return {
+        payoutId: p.id,
+        userid: p.investorid,
+        investorName: p.investor
+          ? `${p.investor.firstname} ${p.investor.lastname}`
+          : null,
+        investmentId: p.investmentId,
+        targetAccountDetails: p.investment?.targetAccountDetails ,
+        holderName: p.holderName,
+        amount,
+        tds,
+        actualAmount,
+     
+      };
     });
 
     return res.json({ success: true, report });
@@ -481,18 +498,13 @@ export const downloadPayoutReportCSV = async (req, res) => {
 
 export const getPayoutReportForInvestor = async (req, res) => {
   try {
-    // console.log("➡ Entered getPayoutReportForInvestor()");
-    // console.log("Investor ID:", req.params.investorid);
     const { investorid } = req.params;
-    const { month, year } = req.query;
-    console.log("Received month:", month, "year:", year);
-    // console.log("Investor ID:", investorid);
 
-    // 1. Find investor
+    // 1️⃣ Validate Investor
     const investor = await Investors.findOne({
       where: { userid: investorid },
+      attributes: ["userid", "firstname", "lastname"],
     });
-    // console.log("Investor:", investor);
 
     if (!investor) {
       return res.status(404).json({
@@ -501,60 +513,59 @@ export const getPayoutReportForInvestor = async (req, res) => {
       });
     }
 
-    // 2. Get all investments for this investor
-    const investments = await Invesment.findAll({
+const payouts = await Payout.findAll({
       where: { investorid },
+      include: [
+        {
+          model: Invesment,
+          as: "investment",
+          attributes: [
+            "id",
+            "targetAccountDetails",
+            "amount",
+            "expectedReturnRate",
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
 
-    // 3. Get all payouts for this investor
-    const payouts = await Payout.findAll({
-      where: { investorid },
-    });
-
-    // 4. Prepare Report Format
-    let report = [];
-
-    for (const inv of investments) {
-      const amount = Number(inv.amount || 0);
-      const rate = Number(inv.expectedReturnRate || 0);
-      const monthlyInterest = amount * (rate / 100);
-
-      let payoutAmount = 0;
-
-      // CASE 1: If investment type is "own" → payout = monthly interest
-      if (inv.invesmentType === "own") {
-        payoutAmount = monthlyInterest;
-      }
-      // CASE 2: Otherwise → payout = amount paid in payout table
-      else {
-        const matchedPayout = payouts.find((p) => p.investorid === investorid);
-        payoutAmount = matchedPayout ? matchedPayout.amount : 0;
-      }
-
-      const tds = payoutAmount * 0.1;
-      const actualAmount = payoutAmount - tds;
-
-      report.push({
-        userid: investor.userid,
-        investorName: investor.firstname + " " + investor.lastname,
-        investmentType: inv.invesmentType,
-        amount: payoutAmount,
-        tds,
-        actualAmount,
-        paidmonth: `${month}-${year}`,
+    if (!payouts.length) {
+      return res.json({
+        success: false,
+        message: "No payout records found",
       });
     }
+    const report = payouts.map((p) => {
+      const amount = Number(p.amount || 0);
+      const tds = amount * 0.1;
+
+      return {
+        investorId: investor.userid,
+        investorName: `${investor.firstname} ${investor.lastname}`,
+        investmentId: p.investmentId,
+        targetAccountDetails: p.investment?.targetAccountDetails || null,
+        holderName: p.holderName,
+        payoutAmount: amount,
+        tds,
+        actualAmount: amount - tds,
+      };
+    });
 
     return res.json({
       success: true,
-      payoutsCount: payouts.length,
+      count: report.length,
       report,
     });
   } catch (err) {
-    console.log("Payout Report Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
+    console.error("Investor Payout Report Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  } 
 };
+
 
 export const downloadPayoutReportForInvestorExcel = async (req, res) => {
   try {
@@ -649,64 +660,78 @@ export const downloadPayoutReportForInvestorExcel = async (req, res) => {
 export const getPayoutReportForAllInvestors = async (req, res) => {
   try {
     const { month, year } = req.query;
-    console.log("Received month:", month, "year:", year);
 
-    // 1. Fetch all investors
-    const investors = await Investors.findAll();
+    let whereClause = {};
+    if (month && year && month !== "undefined" && year !== "undefined") {
+      whereClause.paidMonth = `${month}-${year}`;
+    }
 
-    // 2. Fetch all investments
-    const investments = await Invesment.findAll();
-
-    // 3. Fetch all payouts (filtered by month/year if required)
-    const payouts = await Payout.findAll();
-
-    // Build a map for quick lookup: investmentType per investor
-    const investmentTypeMap = {};
-    investments.forEach((inv) => {
-      if (!investmentTypeMap[inv.investorid]) {
-        investmentTypeMap[inv.investorid] = [];
-      }
-      investmentTypeMap[inv.investorid].push(inv.invesmentType);
+    const payouts = await Payout.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Investors,
+          as: "investor", // ✅ FIXED ALIAS
+          attributes: ["userid", "firstname", "lastname"],
+        },
+        {
+          model: Invesment,
+          as: "investment",
+          attributes: [
+            "id",
+            "targetAccountDetails",
+            "amount",
+            "expectedReturnRate",
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
 
-    // 4. Prepare final report
-    let report = [];
-
-    payouts.forEach((payout) => {
-      const investor = investors.find(
-        (inv) => inv.userid === payout.investorid
-      );
-
-      if (!investor) return; // skip invalid
-
-      const amount = Number(payout.amount || 0);
-      const tds = amount * 0.1; // 10% TDS
-      const actualAmount = amount - tds;
-
-      report.push({
-        userid: investor.userid,
-        investorName: investor.firstname + " " + investor.lastname,
-        investmentTypes:
-          investmentTypeMap[investor.userid]?.join(", ") || "N/A",
-        holder_name: payout.holderName,
-        amount,
-        tds,
-        actualAmount,
-        paidmonth: `${month}-${year}`,
+    if (!payouts.length) {
+      return res.json({
+        success: false,
+        message: "No payout records found",
       });
+    }
+
+    const report = payouts.map((p) => {
+      const amount = Number(p.amount || 0);
+      const tds = amount * 0.1;
+
+      return {
+        investorId: p.investor?.userid,
+        investorName: p.investor
+          ? `${p.investor.firstname} ${p.investor.lastname}`
+          : null,
+        investmentId: p.investmentId,
+        targetAccountDetails: p.investment?.targetAccountDetails || null,
+        holderName: p.holderName,
+        payoutAmount: amount,
+        tds,
+        actualAmount: amount - tds,
+        paidMonth:
+          month && year && month !== "undefined"
+            ? `${month}-${year}`
+            : null,
+      };
     });
 
     return res.json({
       success: true,
-      totalInvestors: investors.length,
-      totalPayouts: payouts.length,
+      count: report.length,
       report,
     });
   } catch (err) {
-    console.log("Payout All Investors Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Payout All Investors Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
+
+
 export const downloadPayoutReportForAllInvestorsExcel = async (req, res) => {
   try {
     const { month, year } = req.query;

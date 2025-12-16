@@ -27,6 +27,12 @@ export default function Reports() {
   const [selectedInvestor, setSelectedInvestor] = useState("");
   const [reportData, setReportData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(null);
+  const [reportLoaded, setReportLoaded] = useState(false);
+  const [paymentMarked, setPaymentMarked] = useState(false);
+const [paidMonthRecords, setPaidMonthRecords] = useState([]);
+
+  
+
   const MONTH_NAMES = [
     "Jan",
     "Feb",
@@ -107,11 +113,14 @@ export default function Reports() {
     }
 
     if (reportType === "payoutInvestor") {
-      setReportData(data.report || []);
+      // console.log("reportData",reportData)
+      setReportData(data.report);
+      setReportLoaded(true);
       // console.log("Payout Investor Report Data:", data);
       return;
     }
     if (reportType === "payoutAll") {
+      
       setReportData(data.report || []);
       // console.log("Payout Investor Report Data:", data);
       return;
@@ -167,6 +176,83 @@ export default function Reports() {
   };
   // ------------------------------------------------------------------
 
+  // ----------------------- MARK PAYMENT -----------------------------
+  const handleMarkPayment = async () => {
+  if (
+    reportType !== "payoutInvestor" ||
+    reportData.length === 0 ||
+    !selectedMonth
+  ) {
+    alert("Please select month before marking payment");
+    return;
+  }
+
+  const paidmonth = selectedMonth.format("MMM-YYYY");
+  
+  try {
+    const payload = {
+      payouts: reportData.map((item) => ({
+        investorid: item.investorId,
+        investmentId:item.investmentId,
+        investorName: item.investorName,
+         holdername:  item.holderName ,
+        targetAccountDetails: item.targetAccountDetails, // OR item.investmentType
+        amount: item.payoutAmount || item.amount,
+        tds: item.tds,
+        actualAmount: item.actualAmount,
+        paidmonth: paidmonth, // 👈 MATCH MODEL
+      })),
+    };
+
+    const res = await fetch(
+      "http://localhost:5544/api/complete-payout/add",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Payment marked successfully!");
+        setPaymentMarked(true);
+    } else {
+      alert("Failed to mark payment: " + data.message);
+    }
+  } catch (error) {
+    console.error("Error marking payment:", error);
+    alert("Error marking payment");
+  }
+};
+const loadPaidMonthRecords = async () => {
+  if (!selectedMonth || !selectedInvestor) return;
+
+  const paidmonth = selectedMonth.format("MMM-YYYY");
+
+  try {
+    const res = await fetch(
+      `http://localhost:5544/api/complete-payout/by-month?investorid=${selectedInvestor}&paidmonth=${paidmonth}`
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      console.log(data)
+      setPaidMonthRecords(data.records);
+      setReportData(data.records); // 👈 reuse table
+    } else {
+      alert("No records found for selected month");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error loading paid records");
+  }
+};
+
+// ------------------------------------------------------------------
+
   return (
     <Paper
       sx={{
@@ -219,18 +305,7 @@ export default function Reports() {
             ))}
           </TextField>
         )}
-        {/* Month Picker - Optional */}
-        {(reportType === "payoutInvestor" || reportType === "payoutAll") && (
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              views={["year", "month"]}
-              label="Select Month & Year"
-              value={selectedMonth}
-              onChange={(newValue) => setSelectedMonth(newValue)}
-              slotProps={{ textField: { fullWidth: true, sx: { mt: 2 } } }}
-            />
-          </LocalizationProvider>
-        )}
+       
       </FormControl>
       <Box sx={{ display: "flex", flexDirection: "row", gap: 2 }}>
         <Button variant="contained" sx={{ mt: 2 }} onClick={loadReport}>
@@ -278,6 +353,32 @@ export default function Reports() {
           </Table>
         )}
       </TableContainer>
+      <Box>
+         {/* Month Picker - Optional */}
+        { reportLoaded &&
+        (reportType === "payoutInvestor" || reportType === "payoutAll") && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              views={["year", "month"]}
+              label="Select Month & Year"
+              value={selectedMonth}
+              onChange={(newValue) => setSelectedMonth(newValue)}
+              slotProps={{ textField: { fullWidth: true, sx: { mt: 2 } } }}
+            />
+          </LocalizationProvider>
+        )}
+        {reportData.length > 0 && reportType === "payoutInvestor" && ( <Button variant="contained" color="secondary" sx={{ mt: 2 }} onClick={handleMarkPayment} > Mark Payment </Button> )}
+        {paymentMarked && selectedMonth && (
+  <Button
+    variant="outlined"
+    color="primary"
+    sx={{ mt: 2, ml: 2 }}
+    onClick={loadPaidMonthRecords}
+  >
+    View Paid Records ({selectedMonth.format("MMM-YYYY")})
+  </Button>
+)}
+      </Box>
     </Paper>
   );
 }

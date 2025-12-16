@@ -86,9 +86,10 @@ export default function PayoutList() {
         <TableHead>
           <TableRow>
             <TableCell>Investor ID</TableCell>
+            <TableCell>Invesment ID</TableCell>
             <TableCell>Holder Name</TableCell>
             <TableCell>Target Account Details</TableCell>
-            {/* <TableCell>Account Number</TableCell>
+            {/* 
             <TableCell>IFSC Code</TableCell>
             <TableCell>Account Type</TableCell>  */}
             <TableCell>Amount</TableCell>
@@ -107,11 +108,11 @@ export default function PayoutList() {
           (payouts.map((p) => (
             <TableRow key={p.id}>
               <TableCell>{p.investorid}</TableCell>
+              <TableCell>{p.investmentId}</TableCell>
               <TableCell>{p.holderName}</TableCell>
               <TableCell>{p.investment?.targetAccountDetails}</TableCell>
-              {/* <TableCell>{p.accountNumber}</TableCell>
-              <TableCell>{p.ifscCode}</TableCell>
-              <TableCell>{p.accountType}</TableCell>  */}
+              {/* <TableCell>{p.ifscCode}</TableCell>
+              <TableCell>{p.accountType}</TableCell>   */}
               <TableCell>{p.amount}</TableCell>
 
               <TableCell>
