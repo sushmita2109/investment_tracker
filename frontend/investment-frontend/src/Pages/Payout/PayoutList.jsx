@@ -42,15 +42,15 @@ export default function PayoutList() {
     loadPayouts();
   }, []);
 
-  //   const deletePayout = async (id) => {
-  //     if (!window.confirm("Delete this payout detail?")) return;
+    const deletePayout = async (id) => {
+      if (!window.confirm("Delete this payout detail?")) return;
 
-  //     await fetch(`http://localhost:5544/api/payout/delete/${id}`, {
-  //       method: "DELETE",
-  //     });
+      await fetch(`http://localhost:5544/api/payout/delete/${id}`, {
+        method: "DELETE",
+      });
 
-  //     loadPayouts();
-  //   };
+      loadPayouts();
+    };
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }}>
@@ -120,7 +120,7 @@ export default function PayoutList() {
               </TableCell>
             </TableRow>
           ) :
-          (payouts.map((p) => (
+          (payouts.filter((p)=>p.status==="active").map((p) => (
             <TableRow key={p.id}>
               <TableCell>{p.investorid}</TableCell>
               <TableCell>{p.investmentId}</TableCell>
@@ -132,9 +132,9 @@ export default function PayoutList() {
 
               <TableCell>
                 <Button onClick={() => setEditData(p)}>Edit</Button>
-                {/* <Button color="error" onClick={() => deletePayout(p.id)}>
+                <Button color="error" onClick={() => deletePayout(p.id)}>
                   Delete
-                </Button> */}
+                </Button>
               </TableCell>
             </TableRow>
           )))}

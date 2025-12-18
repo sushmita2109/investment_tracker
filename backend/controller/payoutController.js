@@ -96,3 +96,32 @@ export const updatePayout = async (req, res) => {
     });
   }
 };
+
+export const deletePayout = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const payout = await Payout.findByPk(id);
+
+    if (!payout) {
+      return res.status(404).json({
+        success: false,
+        message: "Payout record not found",
+      });
+    }
+
+    // 👇 SOFT DELETE
+    await payout.update({ status: "inactive" });
+
+    return res.json({
+      success: true,
+      message: "Payout marked as inactive successfully",
+    });
+  } catch (error) {
+    console.error("Delete Payout Error:", error);
+    res.status(500).json({
+    success: false,
+      message: "Server error while deleting payout",
+    });
+  }
+};

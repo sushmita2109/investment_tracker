@@ -58,6 +58,10 @@ const Payout = sequelize.define(
     tds: {
       type: DataTypes.INTEGER,
     },
+    status:{
+      type:DataTypes.ENUM("active","inactive"),
+      defaultValue:"active",
+    }
   },
   {
     tableName: "payout",

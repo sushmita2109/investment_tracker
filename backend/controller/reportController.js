@@ -17,20 +17,20 @@ export const getOverallSummary = async (req, res) => {
       0
     );
 
-    const totalPayout = payouts.reduce(
+    const totalPayoutYearly = payouts.reduce(
       (sum, p) => sum + Number(p.amount || 0),
       0
     );
 
-    const currentPortfolioValue = totalInvestedAmount - totalPayout;
+    const currentPortfolioValue = totalInvestedAmount - totalPayoutYearly;
 
-    const totalReturns = totalPayout; // correct formula
+    const totalReturns = totalPayoutYearly; // correct formula
 
     const summary = {
       totalInvestors,
       totalInvestedAmount,
       currentPortfolioValue,
-      totalReturns,
+      totalPayoutYearly,
     };
 
     return res.json({ success: true, summary });
@@ -150,7 +150,7 @@ export const getInvestorReport = async (req, res) => {
         id,
         ...cleanData
       } = i.dataValues;
-      const monthlyReturn = amount * (rate / 100);
+      const monthlyReturn = (amount * (rate / 100))/12;
 
       const startDate = new Date(cleanData.invesmentDate);
       // console.log("startDate:", startDate);
@@ -300,7 +300,7 @@ export const getInterestReport = async (req, res) => {
           ...cleanData
         } = i.dataValues;
 
-        const monthlyReturn = amount * (rate / 100);
+        const monthlyReturn = ((amount * (rate / 100))/12).toFixed(2);
 
         // FIXED: correct field name
         const startDate = new Date(cleanData.invesmentDate);
@@ -443,7 +443,7 @@ export const getPayoutReport = async (req, res) => {
 
     const report = payouts.map((p) => {
       const amount = Number(p.amount || 0);
-      const tds = amount * 0.1;
+      const tds = amount * p.tds;
       const actualAmount = amount - tds;
 
 

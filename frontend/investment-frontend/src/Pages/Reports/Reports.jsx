@@ -64,7 +64,27 @@ const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadInvestors();
-  }, []);
+    if (!reportType) return;
+
+  // investor-wise reports
+  if (
+    (reportType === "investor" || reportType === "payoutInvestor") &&
+    !selectedInvestor
+  ) {
+    return;
+  }
+
+  // payout reports require month
+  if (
+    (reportType === "payoutInvestor" || reportType === "payoutAll") &&
+    !selectedMonth
+  ) {
+    return;
+  }
+
+  loadReport();
+
+  }, [reportType, selectedInvestor, selectedMonth]);
 
   // Fetch report based on type
   const loadReport = async () => {
@@ -283,10 +303,9 @@ const loadPaidMonthRecords = async () => {
         {/* Investor Dropdown */}
         {(reportType === "investor" || reportType === "payoutInvestor") && (
           <TextField
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, width: 300 }}
             label="Select Investor"
             select
-            fullWidth
             value={selectedInvestor}
             onChange={(e) => setSelectedInvestor(e.target.value)}
           >
@@ -370,7 +389,7 @@ const loadPaidMonthRecords = async () => {
               label="Select Month & Year"
               value={selectedMonth}
               onChange={(newValue) => setSelectedMonth(newValue)}
-              slotProps={{ textField: { fullWidth: true, sx: { mt: 2 } } }}
+              slotProps={{ textField: {  sx: { mt: 2 } } }}
             />
           </LocalizationProvider>
         )}
