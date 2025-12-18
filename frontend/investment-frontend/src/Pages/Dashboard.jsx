@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box, Grid, Paper, Typography } from "@mui/material";
+import {DashboardCardSkeleton} from '../Components/DashboardCardSkeleton'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -7,15 +8,20 @@ export default function Dashboard() {
     totalInvestments: 0,
     activeInvestments: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch dashboard stats from API
+    setLoading(true);
     fetch("http://localhost:5544/api/dashboard/stats")
       .then((res) => res.json())
       .then((data) => {
         setStats(data);
       })
-      .catch((err) => console.error("Dashboard load error:", err));
+      .catch((err) => console.error("Dashboard load error:", err))
+      .finally(()=>{setTimeout(()=>{
+        setLoading(false)
+      },1000)})
   }, []);
 
   const cardStyle = {
@@ -60,27 +66,40 @@ export default function Dashboard() {
       <Grid container spacing={3}>
         {/* Total Investors */}
         <Grid item xs={12} md={4}>
+          {loading ? (
+      <DashboardCardSkeleton />
+    ) : (
           <Paper sx={cardStyle}>
             <Typography sx={labelStyle}>Total Investors</Typography>
             <Typography sx={numberStyle}>{stats.totalInvestors}</Typography>
           </Paper>
+    )}
         </Grid>
 
         {/* Total Investments */}
         <Grid item xs={12} md={4}>
+          {loading ? (
+      <DashboardCardSkeleton />
+    ) : (
           <Paper sx={cardStyle}>
             <Typography sx={labelStyle}>Total Investments</Typography>
             <Typography sx={numberStyle}>{stats.totalInvestments}</Typography>
           </Paper>
+    )}
         </Grid>
 
         {/* Active Investments */}
         <Grid item xs={12} md={4}>
+          {loading ? (
+      <DashboardCardSkeleton />
+    ) : (
           <Paper sx={cardStyle}>
             <Typography sx={labelStyle}>Active Investments</Typography>
             <Typography sx={numberStyle}>{stats.activeInvestments}</Typography>
           </Paper>
+    )}
         </Grid>
+
       </Grid>
     </Box>
   );

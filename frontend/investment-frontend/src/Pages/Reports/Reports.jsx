@@ -20,6 +20,9 @@ import {
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import SkeletonTable from "../../Components/SkeletonTable";
+
+
 
 export default function Reports() {
   const [reportType, setReportType] = useState("");
@@ -30,6 +33,8 @@ export default function Reports() {
   const [reportLoaded, setReportLoaded] = useState(false);
   const [paymentMarked, setPaymentMarked] = useState(false);
 const [paidMonthRecords, setPaidMonthRecords] = useState([]);
+const [loading, setLoading] = useState(false);
+
 
   
 
@@ -47,6 +52,8 @@ const [paidMonthRecords, setPaidMonthRecords] = useState([]);
     "Nov",
     "Dec",
   ];
+  const HIDDEN_COLUMNS = ["paymentDate", "createdAt", "updatedAt"];
+
 
   // Load investors
   const loadInvestors = async () => {
@@ -61,6 +68,10 @@ const [paidMonthRecords, setPaidMonthRecords] = useState([]);
 
   // Fetch report based on type
   const loadReport = async () => {
+     setLoading(true);
+  setReportData([]);
+  setReportLoaded(false);
+   try {
     let url = "";
 
     if (reportType === "overall") url = "/api/reports/overall";
@@ -89,42 +100,20 @@ const [paidMonthRecords, setPaidMonthRecords] = useState([]);
     // For overall summary → show object as a table row
     if (reportType === "overall") {
       setReportData([data.summary]);
-      return;
-    }
-
-    // For investor report
-    if (reportType === "investor") {
+    } else if (reportType === "investor") {
       setReportData(data.investments || []);
-
-      return;
-    }
-
-    // For interest report
-    if (reportType === "interest") {
-      const rows = data.report.flatMap((r) => r.investments);
-      setReportData(rows);
-      return;
-    }
-
-    // For payouts
-    if (reportType === "payout") {
+    } else if (reportType === "interest") {
+      setReportData(data.report?.flatMap((r) => r.investments) || []);
+    } else {
       setReportData(data.report || []);
-      return;
     }
 
-    if (reportType === "payoutInvestor") {
-      // console.log("reportData",reportData)
-      setReportData(data.report);
-      setReportLoaded(true);
-      // console.log("Payout Investor Report Data:", data);
-      return;
-    }
-    if (reportType === "payoutAll") {
-      
-      setReportData(data.report || []);
-      // console.log("Payout Investor Report Data:", data);
-      return;
-    }
+    setReportLoaded(true);
+  } catch (err) {
+    console.error("Load report error:", err);
+  } finally {
+    setLoading(false); // ✅ ALWAYS EXECUTES
+  }
   };
 
   // ------------------------ DOWNLOAD CSV ---------------------------
@@ -231,10 +220,13 @@ const loadPaidMonthRecords = async () => {
 
   const paidmonth = selectedMonth.format("MMM-YYYY");
 
+    const url =
+    reportType === "payoutAll"
+      ? `http://localhost:5544/api/complete-payout/by-month/all?paidmonth=${paidmonth}`
+      : `http://localhost:5544/api/complete-payout/by-month?investorid=${selectedInvestor}&paidmonth=${paidmonth}`;
+
   try {
-    const res = await fetch(
-      `http://localhost:5544/api/complete-payout/by-month?investorid=${selectedInvestor}&paidmonth=${paidmonth}`
-    );
+    const res = await fetch(url);
 
     const data = await res.json();
 
@@ -319,7 +311,13 @@ const loadPaidMonthRecords = async () => {
       </Box>
       {/* REPORT TABLE */}
       <TableContainer>
-        {reportData.length > 0 && (
+        {loading && (
+    <SkeletonTable
+      rows={5}
+      columns={reportType === "overall" ? 4 : 8}
+    />
+  )}
+        {!loading && reportData.length > 0 && (
           <Table
             // stickyHeader
             sx={{
@@ -328,7 +326,9 @@ const loadPaidMonthRecords = async () => {
           >
             <TableHead>
               <TableRow>
-                {Object.keys(reportData[0])?.map((header) => (
+                {Object.keys(reportData[0])
+            .filter((header) => !HIDDEN_COLUMNS.includes(header))
+            .map((header) => (
                   <TableCell align="right" key={header}>
                     {header}
                   </TableCell>
@@ -342,7 +342,9 @@ const loadPaidMonthRecords = async () => {
                   key={index}
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
-                  {Object.keys(row).map((key) => (
+                  {Object.keys(row)
+              .filter((key) => !HIDDEN_COLUMNS.includes(key))
+              .map((key) => (
                     <TableCell align="right" key={key}>
                       {row[key]}
                     </TableCell>
@@ -352,6 +354,11 @@ const loadPaidMonthRecords = async () => {
             </TableBody>
           </Table>
         )}
+         {!loading && reportData.length === 0 && (
+    <Typography sx={{ mt: 2 }} color="text.secondary">
+      No data to display
+    </Typography>
+  )}
       </TableContainer>
       <Box>
          {/* Month Picker - Optional */}
@@ -367,8 +374,8 @@ const loadPaidMonthRecords = async () => {
             />
           </LocalizationProvider>
         )}
-        {reportData.length > 0 && reportType === "payoutInvestor" && ( <Button variant="contained" color="secondary" sx={{ mt: 2 }} onClick={handleMarkPayment} > Mark Payment </Button> )}
-        {paymentMarked && selectedMonth && (
+        {reportData.length > 0 && (reportType === "payoutInvestor"|| reportType=="payoutAll" )&& ( <Button variant="contained" color="secondary" sx={{ mt: 2 }} onClick={handleMarkPayment} > Mark Payment </Button> )}
+        {paymentMarked && selectedMonth && (reportType === "payoutInvestor" || reportType === "payoutAll") && (
   <Button
     variant="outlined"
     color="primary"

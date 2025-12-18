@@ -12,17 +12,30 @@ import {
 } from "@mui/material";
 import EditPayout from "./EditPayout";
 import AddPayoutHolder from "./AddPayoutHolder";
+import SkeletonTable from "../../Components/SkeletonTable";
 
 export default function PayoutList() {
   const [payouts, setPayouts] = useState([]);
   const [editData, setEditData] = useState(null);
   const [openAdd, setOpenAdd] = useState(false);
+   const [loading, setLoading] = useState(false);
 
   const loadPayouts = async () => {
+    setLoading(true)
+    try{
     const res = await fetch("http://localhost:5544/api/payouts/all");
     const data = await res.json();
     console.log(data);
     setPayouts(data.data);
+    }
+    catch(err){
+      console.error(err)
+    }
+    finally{
+      setTimeout(()=>{
+        setLoading(false)
+      },1000)
+    }
   };
 
   useEffect(() => {
@@ -81,7 +94,9 @@ export default function PayoutList() {
           onUpdate={loadPayouts}
         />
       )}
-
+         {loading ? (
+       <SkeletonTable rows={5} columns={5} />
+     ) : (
       <Table>
         <TableHead>
           <TableRow>
@@ -125,6 +140,7 @@ export default function PayoutList() {
           )))}
         </TableBody>
       </Table>
+     )}
     </Box>
   );
 }

@@ -12,17 +12,29 @@ import {
 } from "@mui/material";
 import EditInvestment from "./EditInvesment";
 import AddInvesment from "./AddInvesment";
+import SkeletonTable from "../../Components/SkeletonTable";
 
 export default function InvesmentList() {
   const [list, setList] = useState([]);
   const [editData, setEditData] = useState(null);
   const [openAdd, setOpenAdd] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const load = async () => {
+    setLoading(true)
+    try{
     const res = await fetch("http://localhost:5544/api/invesments/all");
     const json = await res.json();
 
-    setList(json.data);
+    setList(json.data);}
+    catch(err){
+        console.error(err);
+    }
+    finally{
+      setTimeout(()=>{
+        setLoading(false)
+      },1000)
+    }
   };
 
   useEffect(() => {
@@ -81,6 +93,9 @@ export default function InvesmentList() {
           onUpdate={load}
         />
       )}
+         {loading ? (
+        <SkeletonTable rows={5} columns={5} />
+      ) : (
       <Table>
         <TableHead>
           <TableRow>
@@ -122,6 +137,7 @@ export default function InvesmentList() {
           )}
         </TableBody>
       </Table>
+      )}
     </Box>
   );
 }

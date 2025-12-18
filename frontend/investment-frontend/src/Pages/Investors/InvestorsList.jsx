@@ -12,16 +12,29 @@ import {
 } from "@mui/material";
 import EditInvestor from "./EditInvestor";
 import AddInvestor from "./AddInvestorForm";
+import SkeletonTable from "../../Components/SkeletonTable";
 
 export default function InvestorsList() {
   const [investors, setInvestors] = useState([]);
   const [editData, setEditData] = useState(null);
   const [openAdd, setOpenAdd] = useState(false);
+  const [loading, setLoading] = useState(false);
+
 
   const loadInvestors = async () => {
+     setLoading(true);
+     try{
     const res = await fetch("http://localhost:5544/api/investors/all");
     const data = await res.json();
-    setInvestors(data);
+    setInvestors(data);}
+catch (err) {
+    console.error(err);
+  } finally {
+    setTimeout(()=>{
+     setLoading(false); 
+    },1000)
+    
+  }
   };
 
   useEffect(() => {
@@ -84,6 +97,9 @@ export default function InvestorsList() {
       )}
 
       {/* Table */}
+      {loading ? (
+  <SkeletonTable rows={5} columns={5} />
+) : (
       <Table>
         <TableHead>
           <TableRow>
@@ -96,16 +112,17 @@ export default function InvestorsList() {
         </TableHead>
 
         <TableBody>
-          {investors.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} align="center">
-                No records found
-              </TableCell>
-            </TableRow>
-          ) :
-          (investors
-            .filter((inv) => inv.status === "active")
-            .map((inv) => (
+
+          {investors.filter((inv) => inv.status === "active").length === 0 ? (
+        <TableRow>
+          <TableCell colSpan={5} align="center">
+            No records found
+          </TableCell>
+        </TableRow>
+      ) : (
+        investors
+          .filter((inv) => inv.status === "active")
+          .map((inv) => (
               <TableRow key={inv.userid}>
                 <TableCell>{inv.firstname}</TableCell>
                 <TableCell>{inv.lastname}</TableCell>
@@ -124,6 +141,7 @@ export default function InvestorsList() {
             )))}
         </TableBody>
       </Table>
+)}
     </Box>
   );
 }

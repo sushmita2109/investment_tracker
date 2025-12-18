@@ -61,3 +61,31 @@ export const getCompletePayoutByMonth = async (req, res) => {
   }
 };
 
+export const getCompletePayoutByMonthAll = async (req, res) => {
+  try {
+    const { paidmonth } = req.query;
+
+    if (!paidmonth) {
+      return res.status(400).json({
+        success: false,
+        message: "paidmonth is required",
+      });
+    }
+
+    const records = await CompletePayout.findAll({
+      where: { paidmonth },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!records.length) {
+      return res.json({ success: false, message: "No records found" });
+    }
+
+    res.json({ success: true, records });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+};
+
+

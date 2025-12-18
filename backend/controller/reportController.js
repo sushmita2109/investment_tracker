@@ -662,16 +662,16 @@ export const getPayoutReportForAllInvestors = async (req, res) => {
     const { month, year } = req.query;
 
     let whereClause = {};
-    if (month && year && month !== "undefined" && year !== "undefined") {
-      whereClause.paidMonth = `${month}-${year}`;
-    }
+    // if (month && year && month !== "undefined" && year !== "undefined") {
+    //   whereClause.paidMonth = `${month}-${year}`;
+    // }
 
     const payouts = await Payout.findAll({
       where: whereClause,
       include: [
         {
           model: Investors,
-          as: "investor", // ✅ FIXED ALIAS
+          as: "investor", 
           attributes: ["userid", "firstname", "lastname"],
         },
         {
@@ -710,10 +710,10 @@ export const getPayoutReportForAllInvestors = async (req, res) => {
         payoutAmount: amount,
         tds,
         actualAmount: amount - tds,
-        paidMonth:
-          month && year && month !== "undefined"
-            ? `${month}-${year}`
-            : null,
+        // paidMonth:
+        //   month && year && month !== "undefined"
+        //     ? `${month}-${year}`
+        //     : null,
       };
     });
 
