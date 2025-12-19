@@ -3,37 +3,41 @@ import Investors from "../models/Investors.js";
 
 export default function registerInvestmentHooks(Invesment) {
   Invesment.afterCreate(async (inv) => {
-    // Prevent duplicate payout
-    const exists = await Payout.findOne({
-      where: { investmentId: inv.id },
-    });
+    try {
+      // ✅ Only create payout for OWN account
+      if (inv.targetAccountDetails !== "own") {
+        return; // 🚫 STOP HERE
+      }
 
-    if (exists) return;
+      // Prevent duplicate payout
+      const exists = await Payout.findOne({
+        where: { investmentId: inv.id },
+      });
+      if (exists) return;
 
-    const investor = await Investors.findOne({
-      where: { userid: inv.investorid },
-    });
+      const investor = await Investors.findOne({
+        where: { userid: inv.investorid },
+      });
+      if (!investor) return;
 
-    if (!investor) return;
+      // Monthly interest
+      const interestAmount =
+        (Number(inv.amount) * Number(inv.expectedReturnRate)) / 100 / 12;
 
-    // Calculate interest amount
-    const interestAmount =
-      Number(inv.amount) * (Number(inv.expectedReturnRate) / 100);
-
-    // ✅ TDS logic
-    const isOwnAccount = inv.targetAccountDetails === "own";
-    const tds = isOwnAccount ? 0 : interestAmount * 0.1;
-
-    await Payout.create({
-      investorid: inv.investorid,
-      investmentId: inv.id,
-      holderName: `${investor.firstname} ${investor.lastname}`,
-      bankName: "",
-      accountNumber: "",
-      ifscCode: "",
-      accountType: "savings",
-      amount: interestAmount,
-      tds, // ✅ CONDITIONAL TDS
-    });
+      await Payout.create({
+        investorid: inv.investorid,
+        investmentId: inv.id,
+        holderName: `${investor.firstname} ${investor.lastname}`,
+        bankName: "",
+        accountNumber: "",
+        ifscCode: "",
+        accountType: "savings",
+        amount: interestAmount,
+        tds: 0, // ✅ always 0 for own account
+        status: "active",
+      });
+    } catch (err) {
+      console.error("Investment afterCreate hook error:", err);
+    }
   });
 }

@@ -36,7 +36,7 @@ export default function AddInvesment({ onSuccess }) {
     });
     const data = await res.json();
     if (data.success) {
-      // Show investment success
+    
       alert("Investment added!");
 
       // If auto payout created — show details

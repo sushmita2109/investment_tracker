@@ -109,14 +109,15 @@ export default function InvesmentList() {
         </TableHead>
 
         <TableBody>
-          {list.length === 0 ? (
+          {list.filter(inv => !inv.maturityDate).length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} align="center">
                 No records found
               </TableCell>
             </TableRow>
           ) : (
-            list.map((inv) => (
+            list.filter(inv => !inv.maturityDate)
+            .map((inv) => (
               <TableRow key={inv.id}>
                 <TableCell>{inv.investorid}</TableCell>
                 <TableCell>{inv.invesmentType}</TableCell>

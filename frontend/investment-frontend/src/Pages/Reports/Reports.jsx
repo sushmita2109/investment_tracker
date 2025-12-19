@@ -98,7 +98,7 @@ const [loading, setLoading] = useState(false);
     if (reportType === "investor" && selectedInvestor)
       url = `/api/reports/investor/${selectedInvestor}`;
     if (reportType === "interest") url = "/api/reports/interest";
-    if (reportType === "payout") url = "/api/reports/payout";
+    if (reportType === "payout") url = "/api/complete-payout/all";
     if (reportType === "payoutInvestor" && selectedInvestor) {
       const monthIndex = selectedMonth?.month();
       const month = MONTH_NAMES[monthIndex];
@@ -124,7 +124,10 @@ const [loading, setLoading] = useState(false);
       setReportData(data.investments || []);
     } else if (reportType === "interest") {
       setReportData(data.report?.flatMap((r) => r.investments) || []);
-    } else {
+    } else if (reportType === "payout") {
+      setReportData(data.records || []);
+    } else 
+      {
       setReportData(data.report || []);
     }
 

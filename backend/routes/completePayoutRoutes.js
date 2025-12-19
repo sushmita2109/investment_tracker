@@ -1,5 +1,5 @@
 import express from "express";
-import { addCompletePayout,getCompletePayoutByMonth,getCompletePayoutByMonthAll } from "../controller/completePayoutController.js";
+import { addCompletePayout,getCompletePayoutByMonth,getCompletePayoutByMonthAll,getAllCompletePayouts } from "../controller/completePayoutController.js";
 
 const router = express.Router();
 
@@ -9,6 +9,6 @@ router.get(
   "/complete-payout/by-month/all",
   getCompletePayoutByMonthAll
 );
-
+router.get("/all", getAllCompletePayouts);
 
 export default router;

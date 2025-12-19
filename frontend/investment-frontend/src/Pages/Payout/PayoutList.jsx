@@ -104,10 +104,9 @@ export default function PayoutList() {
             <TableCell>Invesment ID</TableCell>
             <TableCell>Holder Name</TableCell>
             <TableCell>Target Account Details</TableCell>
-            {/* 
-            <TableCell>IFSC Code</TableCell>
-            <TableCell>Account Type</TableCell>  */}
+             <TableCell>Status</TableCell>   
             <TableCell>Amount</TableCell>
+            <TableCell>TDS</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -126,9 +125,10 @@ export default function PayoutList() {
               <TableCell>{p.investmentId}</TableCell>
               <TableCell>{p.holderName}</TableCell>
               <TableCell>{p.investment?.targetAccountDetails}</TableCell>
-              {/* <TableCell>{p.ifscCode}</TableCell>
-              <TableCell>{p.accountType}</TableCell>   */}
+               <TableCell>{p.status}</TableCell>
+              {/* <TableCell>{p.accountType}</TableCell>    */}
               <TableCell>{p.amount}</TableCell>
+              <TableCell>{p.tds}</TableCell>
 
               <TableCell>
                 <Button onClick={() => setEditData(p)}>Edit</Button>

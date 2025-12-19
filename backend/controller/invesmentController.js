@@ -13,10 +13,10 @@ export const addInvesment = async (req, res) => {
       where: { investmentId: inv.id },
     });
 
-    res.json({ message: "Invesment added", inv, autoPayout });
+    res.json({ success:true,message: "Invesment added", inv, autoPayout });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success:false, error: err.message });
   }
 };
 

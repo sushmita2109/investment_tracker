@@ -96,7 +96,7 @@ export default function AddInvestorForm({ onSuccess }) {
           sx={{ backgroundColor: "black", flex: 1 }}
           onClick={handleSubmit}
         >
-          Add Investment
+          Add Investor
         </Button>
 
         <Button

@@ -61,6 +61,7 @@ export const updatePayout = async (req, res) => {
       ifscCode,
       accountType,
       amount,
+      tds
     } = req.body;
 
     // Find payout by primary key
@@ -78,6 +79,7 @@ export const updatePayout = async (req, res) => {
     payout.ifscCode = ifscCode ?? payout.ifscCode;
     payout.accountType = accountType ?? payout.accountType;
     payout.amount = amount ?? payout.amount;
+    payout.tds = tds ?? payout.tds;
 
     // Save changes
     await payout.save();
@@ -111,7 +113,8 @@ export const deletePayout = async (req, res) => {
     }
 
     // 👇 SOFT DELETE
-    await payout.update({ status: "inactive" });
+    payout.status = "inactive";
+    await payout.save();
 
     return res.json({
       success: true,

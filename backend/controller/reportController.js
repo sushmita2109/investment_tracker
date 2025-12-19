@@ -310,13 +310,12 @@ export const getInterestReport = async (req, res) => {
         let monthsPassed =
           (today.getFullYear() - startDate.getFullYear()) * 12 +
           (today.getMonth() - startDate.getMonth());
-        // console.log("monthsPassed:", monthsPassed);
 
         if (monthsPassed < 0 || isNaN(monthsPassed)) monthsPassed = 0;
 
         const totalReturnTillDate = monthlyReturn * monthsPassed;
-
-        const tds = totalReturnTillDate * 0.1;
+        const tdsValue=i.targetAccountDetails==="own"?0:10;    
+        const tds = totalReturnTillDate * tdsValue/100;
         const actualPayment = totalReturnTillDate - tds;
 
         return {

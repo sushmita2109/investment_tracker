@@ -88,4 +88,33 @@ export const getCompletePayoutByMonthAll = async (req, res) => {
   }
 };
 
+export const getAllCompletePayouts = async (req, res) => {
+  try {
+    const records = await CompletePayout.findAll();
 
+    if (!records.length) {
+      return res.json({
+        success: false,
+        message: "No complete payout records found",
+      });
+    }
+
+    // 🔹 Convert "MMM-YYYY" → Date for proper sorting
+    const sortedRecords = records.sort((a, b) => {
+      const dateA = new Date(`01-${a.paidmonth}`);
+      const dateB = new Date(`01-${b.paidmonth}`);
+      return dateA - dateB;
+    });
+return res.json({
+      success: true,
+      count: sortedRecords.length,
+      records: sortedRecords,
+    });
+  } catch (error) {
+    console.error("Get Complete Payout Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching complete payouts",
+    });
+  }
+};

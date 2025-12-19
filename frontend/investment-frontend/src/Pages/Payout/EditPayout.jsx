@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 
 export default function EditPayout({ data, onClose, onUpdate }) {
+ 
   const [form, setForm] = useState({
     investorid: data.investorid || "",
     holderName: data.holderName || "",
@@ -18,6 +19,7 @@ export default function EditPayout({ data, onClose, onUpdate }) {
     ifscCode: data.ifscCode || "",
     accountType: data.accountType || "",
     amount: data.amount || "",
+    tds: data.tds || "",
   });
 
   const handleChange = (e) => {
@@ -35,7 +37,7 @@ export default function EditPayout({ data, onClose, onUpdate }) {
     );
 
     const json = await res.json();
-    console.log("🚀 ~ savePayout ~ json:", json);
+    // console.log("🚀 ~ savePayout ~ json:", json);
 
     if (json.success) {
       onUpdate(); // reload list
