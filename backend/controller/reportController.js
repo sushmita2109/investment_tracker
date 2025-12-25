@@ -267,93 +267,95 @@ export const downloadInvestorReportExcel = async (req, res) => {
 
 export const getInterestReport = async (req, res) => {
   try {
-    const investors = await Investors.findAll();
+    const payouts = await Payout.findAll({
+      include: [
+        {
+          model: Investors,
+          as: "investor",
+          attributes: ["userid", "firstname", "lastname"],
+        },
+        {
+          model: Invesment,
+          as: "investment",
+          attributes: [
+            "id",
+            "amount",
+            "expectedReturnRate",
+            "invesmentDate",
+            "targetAccountDetails",
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
 
-    if (!investors || investors.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No investors found",
-      });
+    if (!payouts.length) {
+      return res.json({ success: false, message: "No payout records found" });
     }
 
-    let finalReport = [];
+    const today = new Date();
 
-    for (const investor of investors) {
-      const investorid = investor.userid;
+    const report = payouts.map((p) => {
+      if (!p.investment) return null;
 
-      const investmentRows = await Invesment.findAll({
-        where: { investorid },
-      });
+    const startDate = new Date(p.investment.invesmentDate);
 
-      if (!investmentRows.length) continue;
+      let totalDays = Math.floor(
+        (today - startDate) / (1000 * 60 * 60 * 24)
+      );
+      if (totalDays < 0 || isNaN(totalDays)) totalDays = 0;
 
-      const investmentData = investmentRows.map((i) => {
-        const amount = Number(i.amount || 0);
-        const rate = Number(i.expectedReturnRate || 0);
+      const monthsPassed = Math.floor(totalDays / 30);
+      const remainingDays = totalDays % 30;
+    
+      const principal = Number(p.investment.amount || 0);
+      const rate = Number(p.investment.expectedReturnRate || 0);
 
-        const {
-          createdAt,
-          updatedAt,
-          maturityDate,
-          investorid,
-          id,
-          ...cleanData
-        } = i.dataValues;
+      const monthlyInterest = (principal * rate) / 100 / 12;
+      const monthlyTotal = monthlyInterest * monthsPassed;
 
-        const monthlyReturn = ((amount * (rate / 100))/12).toFixed(2);
+      const dailyInterest = (principal * rate) / 100 / 365;
+      const dailyTotal = dailyInterest * remainingDays;
 
-        // FIXED: correct field name
-        const startDate = new Date(cleanData.invesmentDate);
-        // console.log("startDate:", startDate);
-        const today = new Date();
-
-        let monthsPassed =
-          (today.getFullYear() - startDate.getFullYear()) * 12 +
-          (today.getMonth() - startDate.getMonth());
-
-        if (monthsPassed < 0 || isNaN(monthsPassed)) monthsPassed = 0;
-
-        const totalReturnTillDate = monthlyReturn * monthsPassed;
-        const tdsValue=i.targetAccountDetails==="own"?0:10;    
-        const tds = totalReturnTillDate * tdsValue/100;
-        const actualPayment = totalReturnTillDate - tds;
+      const grossAmount = +(monthlyTotal + dailyTotal).toFixed(2);
+    
+      const isOwn = p.investment.targetAccountDetails === "own";
+      const tdsRate = isOwn ? 0 : 10;
+      const tds = +(grossAmount * tdsRate / 100).toFixed(2);
+        
 
         return {
-          firstname: investor.firstname,
-          lastname: investor.lastname,
-          investorid: investor.userid,
-          investmentId: id,
-          invesmentType: cleanData.invesmentType,
-          targetAccountDetails: cleanData.targetAccountDetails,
-          amount: cleanData.amount,
-          invesmentDate: cleanData.invesmentDate, // FIX HERE ALSO
-          expectedReturnRate: cleanData.expectedReturnRate,
-          monthlyReturn,
-          monthsPassed,
-          totalReturnTillDate,
-          tds,
-          actualPayment,
+        investorName: p.investor
+          ? `${p.investor.firstname} ${p.investor.lastname}`
+          : null,
+
+        
+        targetAccountDetails: p.investment.targetAccountDetails,
+        invesmentDate:p.investment.invesmentDate,
+        currentDate:today.toLocaleDateString(),
+
+        monthsPassed,
+        remainingDays,
+
+        monthlyInterest: monthlyInterest.toFixed(2),
+        monthlyTotal: monthlyTotal.toFixed(2),
+
+        dailyInterest: dailyInterest.toFixed(2),
+        dailyTotal: dailyTotal.toFixed(2),
+
+        payoutAmount: grossAmount,
+        tds,
+        actualAmount: +(grossAmount - tds).toFixed(2),
         };
-      });
+      }).filter(Boolean)
 
-      finalReport.push({
-        investorId: investor.userid,
-        firstname: investor.firstname,
-        lastname: investor.lastname,
-        totalInvestments: investmentData.length,
-        investments: investmentData,
-      });
-    }
-
-    return res.json({
-      success: true,
-      report: finalReport,
-    });
+     res.json({ success: true, report });
   } catch (err) {
-    console.log("getInterestReport Error:", err);
-    res.status(500).json({ success: false, err });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
+
 export const downloadInterestReportExcel = async (req, res) => {
   try {
     const report = await getInterestReport();
@@ -537,7 +539,7 @@ const payouts = await Payout.findAll({
     }
     const report = payouts.map((p) => {
       const amount = Number(p.amount || 0);
-      const tds = amount * 0.1;
+      const tds = amount * p.tds;
 
       return {
         investorId: investor.userid,
@@ -656,21 +658,87 @@ export const downloadPayoutReportForInvestorExcel = async (req, res) => {
   }
 };
 
+// export const getPayoutReportForAllInvestors = async (req, res) => {
+//   try {
+//     const { month, year } = req.query;
+
+//     let whereClause = {};
+//     // if (month && year && month !== "undefined" && year !== "undefined") {
+//     //   whereClause.paidMonth = `${month}-${year}`;
+//     // }
+
+//     const payouts = await Payout.findAll({
+//       where: whereClause,
+//       include: [
+//         {
+//           model: Investors,
+//           as: "investor", 
+//           attributes: ["userid", "firstname", "lastname"],
+//         },
+//         {
+//           model: Invesment,
+//           as: "investment",
+//           attributes: [
+//             "id",
+//             "targetAccountDetails",
+//             "amount",
+//             "expectedReturnRate",
+//           ],
+//         },
+//       ],
+//       order: [["createdAt", "DESC"]],
+//     });
+
+//     if (!payouts.length) {
+//       return res.json({
+//         success: false,
+//         message: "No payout records found",
+//       });
+//     }
+
+//     const report = payouts.map((p) => {
+//       const amount = Number(p.amount || 0);
+//       const tds = amount * 0.1;
+
+//       return {
+//         investorId: p.investor?.userid,
+//         investorName: p.investor
+//           ? `${p.investor.firstname} ${p.investor.lastname}`
+//           : null,
+//         investmentId: p.investmentId,
+//         targetAccountDetails: p.investment?.targetAccountDetails || null,
+//         holderName: p.holderName,
+//         payoutAmount: amount,
+//         tds,
+//         actualAmount: amount - tds,
+//         // paidMonth:
+//         //   month && year && month !== "undefined"
+//         //     ? `${month}-${year}`
+//         //     : null,
+//       };
+//     });
+
+//     return res.json({
+//       success: true,
+//       count: report.length,
+//       report,
+//     });
+//   } catch (err) {
+//     console.error("Payout All Investors Error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//     });
+//   }
+// };
+
 export const getPayoutReportForAllInvestors = async (req, res) => {
   try {
-    const { month, year } = req.query;
-
-    let whereClause = {};
-    // if (month && year && month !== "undefined" && year !== "undefined") {
-    //   whereClause.paidMonth = `${month}-${year}`;
-    // }
-
     const payouts = await Payout.findAll({
-      where: whereClause,
       include: [
         {
           model: Investors,
-          as: "investor", 
+          as: "investor",
           attributes: ["userid", "firstname", "lastname"],
         },
         {
@@ -678,9 +746,10 @@ export const getPayoutReportForAllInvestors = async (req, res) => {
           as: "investment",
           attributes: [
             "id",
-            "targetAccountDetails",
             "amount",
             "expectedReturnRate",
+            "invesmentDate",
+            "targetAccountDetails",
           ],
         },
       ],
@@ -688,45 +757,69 @@ export const getPayoutReportForAllInvestors = async (req, res) => {
     });
 
     if (!payouts.length) {
-      return res.json({
-        success: false,
-        message: "No payout records found",
-      });
+      return res.json({ success: false, message: "No payout records found" });
     }
 
+    const today = new Date();
+
     const report = payouts.map((p) => {
-      const amount = Number(p.amount || 0);
-      const tds = amount * 0.1;
+      if (!p.investment) return null;
+
+      /* ---------------- DATE CALCULATION ---------------- */
+      const startDate = new Date(p.investment.invesmentDate);
+
+      let totalDays = Math.floor(
+        (today - startDate) / (1000 * 60 * 60 * 24)
+      );
+      if (totalDays < 0 || isNaN(totalDays)) totalDays = 0;
+
+      const monthsPassed = Math.floor(totalDays / 30);
+      const remainingDays = totalDays % 30;
+
+      /* ---------------- INTEREST CALCULATION ---------------- */
+      const principal = Number(p.investment.amount || 0);
+      const rate = Number(p.investment.expectedReturnRate || 0);
+
+      const monthlyInterest = (principal * rate) / 100 / 12;
+      const monthlyTotal = monthlyInterest * monthsPassed;
+
+      const dailyInterest = (principal * rate) / 100 / 365;
+      const dailyTotal = dailyInterest * remainingDays;
+
+      const grossAmount = +(monthlyTotal + dailyTotal).toFixed(2);
+
+      /* ---------------- TDS ---------------- */
+      const isOwn = p.investment.targetAccountDetails === "own";
+      const tdsRate = isOwn ? 0 : 10;
+      const tds = +(grossAmount * tdsRate / 100).toFixed(2);
 
       return {
-        investorId: p.investor?.userid,
         investorName: p.investor
           ? `${p.investor.firstname} ${p.investor.lastname}`
           : null,
-        investmentId: p.investmentId,
-        targetAccountDetails: p.investment?.targetAccountDetails || null,
-        holderName: p.holderName,
-        payoutAmount: amount,
-        tds,
-        actualAmount: amount - tds,
-        // paidMonth:
-        //   month && year && month !== "undefined"
-        //     ? `${month}-${year}`
-        //     : null,
-      };
-    });
 
-    return res.json({
-      success: true,
-      count: report.length,
-      report,
-    });
+        investmentId: p.investment.id,
+        targetAccountDetails: p.investment.targetAccountDetails,
+
+        monthsPassed,
+        remainingDays,
+
+        monthlyInterest: monthlyInterest.toFixed(2),
+        monthlyTotal: monthlyTotal.toFixed(2),
+
+        dailyInterest: dailyInterest.toFixed(2),
+        dailyTotal: dailyTotal.toFixed(2),
+
+        payoutAmount: grossAmount,
+        tds,
+        actualAmount: +(grossAmount - tds).toFixed(2),
+      };
+    }).filter(Boolean);
+
+    res.json({ success: true, report });
   } catch (err) {
-    console.error("Payout All Investors Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

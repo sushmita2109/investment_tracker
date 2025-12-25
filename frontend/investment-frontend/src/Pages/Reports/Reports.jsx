@@ -16,6 +16,7 @@ import {
   FormControl,
   InputLabel,
   TableContainer,
+  Checkbox
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -34,9 +35,9 @@ export default function Reports() {
   const [paymentMarked, setPaymentMarked] = useState(false);
 const [paidMonthRecords, setPaidMonthRecords] = useState([]);
 const [loading, setLoading] = useState(false);
+const showCheckbox =
+  reportType === "payoutInvestor" || reportType === "payoutAll";
 
-
-  
 
   const MONTH_NAMES = [
     "Jan",
@@ -53,7 +54,10 @@ const [loading, setLoading] = useState(false);
     "Dec",
   ];
   const HIDDEN_COLUMNS = ["paymentDate", "createdAt", "updatedAt"];
-
+  const isEditablePayout =
+  reportType === "payoutInvestor" || reportType === "payoutAll";
+  const EDITABLE_COLUMNS = ["payoutAmount", "tds", "actualAmount"];
+ 
 
   // Load investors
   const loadInvestors = async () => {
@@ -116,6 +120,7 @@ const [loading, setLoading] = useState(false);
 
     const res = await fetch("http://localhost:5544" + url);
     const data = await res.json();
+    console.log(data);
 
     // For overall summary → show object as a table row
     if (reportType === "overall") {
@@ -123,7 +128,7 @@ const [loading, setLoading] = useState(false);
     } else if (reportType === "investor") {
       setReportData(data.investments || []);
     } else if (reportType === "interest") {
-      setReportData(data.report?.flatMap((r) => r.investments) || []);
+      setReportData(data.report);
     } else if (reportType === "payout") {
       setReportData(data.records || []);
     } else 
@@ -348,7 +353,27 @@ const loadPaidMonthRecords = async () => {
           >
             <TableHead>
               <TableRow>
-                {Object.keys(reportData[0])
+                {showCheckbox && (
+      <TableCell padding="checkbox">
+        <Checkbox
+          indeterminate={
+            reportData.some(r => r?.selected) &&
+            !reportData.every(r => r?.selected)
+          }
+          checked={
+            reportData.length > 0 &&
+            reportData.every(r => r?.selected)
+          }
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setReportData(prev =>
+              prev.map(row => ({ ...row, selected: checked }))
+            );
+          }}
+        />
+      </TableCell>
+    )}
+                {Object.keys(reportData?.[0]||{})
             .filter((header) => !HIDDEN_COLUMNS.includes(header))
             .map((header) => (
                   <TableCell align="right" key={header}>
@@ -359,16 +384,53 @@ const loadPaidMonthRecords = async () => {
             </TableHead>
 
             <TableBody>
+              
               {reportData.map((row, index) => (
                 <TableRow
                   key={index}
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
+                  {showCheckbox && (
+      <TableCell padding="checkbox">
+        <Checkbox
+          indeterminate={
+            reportData.some(r => r?.selected) &&
+            !reportData.every(r => r?.selected)
+          }
+          checked={
+            reportData.length > 0 &&
+            reportData.every(r => r?.selected)
+          }
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setReportData(prev =>
+              prev.map(row => ({ ...row, selected: checked }))
+            );
+          }}
+        />
+      </TableCell>
+    )}
                   {Object.keys(row)
               .filter((key) => !HIDDEN_COLUMNS.includes(key))
               .map((key) => (
                     <TableCell align="right" key={key}>
-                      {row[key]}
+                     {isEditablePayout && EDITABLE_COLUMNS.includes(key) ? (
+              <TextField
+                size="small"
+                type="number"
+                value={row[key] ?? ""}
+                onChange={(e) => {
+                  const updated = [...reportData];
+                  updated[index] = {
+                    ...updated[index],
+                    [key]: e.target.value,
+                  };
+                  setReportData(updated);
+                }}
+              />
+            ) : (
+              row[key]
+            )}
                     </TableCell>
                   ))}
                 </TableRow>
