@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
+import Payout from "./Payout.js";
 
 const CompletePayout = sequelize.define(
   "CompletePayout",
@@ -9,6 +10,16 @@ const CompletePayout = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
+     payoutid: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Payout, // reference to Investors model
+        key: "id", // the field in Investors table
+      },
+       onUpdate: "CASCADE",
+      onDelete: "CASCADE",},
+
     investorid: {
       type: DataTypes.STRING,
       allowNull: false,

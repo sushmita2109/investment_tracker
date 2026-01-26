@@ -108,19 +108,19 @@ const showCheckbox =
       const month = MONTH_NAMES[monthIndex];
       const year = selectedMonth?.year();
 
-      url = `/api/reports/payout/investor/${selectedInvestor}?month=${month}&year=${year}`;
+      url = `/api/payouts/unpaid?investorid=${selectedInvestor}&month=${month}&year=${year}`;
     }
     if (reportType === "payoutAll") {
       const monthIndex = selectedMonth?.month();
       const month = MONTH_NAMES[monthIndex];
       const year = selectedMonth?.year();
 
-      url = `/api/reports/payout/investors?month=${month}&year=${year}`;
+      url = `/api/reports/payout/unpaid?month=${month}&year=${year}`;
     }
 
     const res = await fetch("http://localhost:5544" + url);
     const data = await res.json();
-    console.log(data);
+    // console.log(data);
 
     // For overall summary → show object as a table row
     if (reportType === "overall") {
@@ -140,7 +140,7 @@ const showCheckbox =
   } catch (err) {
     console.error("Load report error:", err);
   } finally {
-    setLoading(false); // ✅ ALWAYS EXECUTES
+    setLoading(false); 
   }
   };
 
@@ -324,6 +324,22 @@ const loadPaidMonthRecords = async () => {
             ))}
           </TextField>
         )}
+
+        {(reportType === "payoutInvestor" || reportType === "payoutAll") && (
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DatePicker
+      views={["year", "month"]}
+      label="Select Month & Year"
+      value={selectedMonth}
+      onChange={(newValue) => setSelectedMonth(newValue)}
+      slotProps={{
+        textField: {
+          sx: { mt: 2, width: 300 },
+        },
+      }}
+    />
+  </LocalizationProvider>
+)}
        
       </FormControl>
       <Box sx={{ display: "flex", flexDirection: "row", gap: 2 }}>
@@ -445,19 +461,7 @@ const loadPaidMonthRecords = async () => {
   )}
       </TableContainer>
       <Box>
-         {/* Month Picker - Optional */}
-        { reportLoaded &&
-        (reportType === "payoutInvestor" || reportType === "payoutAll") && (
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              views={["year", "month"]}
-              label="Select Month & Year"
-              value={selectedMonth}
-              onChange={(newValue) => setSelectedMonth(newValue)}
-              slotProps={{ textField: {  sx: { mt: 2 } } }}
-            />
-          </LocalizationProvider>
-        )}
+        
         {reportData.length > 0 && (reportType === "payoutInvestor"|| reportType=="payoutAll" )&& ( <Button variant="contained" color="secondary" sx={{ mt: 2 }} onClick={handleMarkPayment} > Mark Payment </Button> )}
         {paymentMarked && selectedMonth && (reportType === "payoutInvestor" || reportType === "payoutAll") && (
   <Button

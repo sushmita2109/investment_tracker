@@ -1,5 +1,6 @@
 import Payout from "../models/Payout.js";
 import Invesment from "../models/Invesment.js";
+import CompletePayout from "../models/CompletePayout.js";
 
 export const addPayout = async (req, res) => {
   try {
@@ -128,3 +129,59 @@ export const deletePayout = async (req, res) => {
     });
   }
 };
+
+export const getUnpaidPayouts = async (req, res) => {
+  try {
+    const { investorid, month, year } = req.query;
+
+    if (!investorid || !month || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "investorid, month and year are required",
+      });
+    }
+
+    const paidMonth = `${month}-${year}`; // e.g. Dec-2025
+
+    // 1️⃣ CHECK IF INVESTOR ALREADY PAID
+    const alreadyPaid = await CompletePayout.findOne({
+      where: {
+        investorid,
+        paidmonth: paidMonth,
+      },
+    });
+
+    if (alreadyPaid) {
+      return res.json({
+        success: true,
+        alreadyPaid: true,
+        message: `Investor already paid for ${paidMonth}`,
+        report: [],
+      });
+    }
+   
+
+    // 2️⃣ FETCH ONLY PAYOUT TABLE DATA
+    const payouts = await Payout.findAll({
+      where: {
+        investorid,
+      },
+      order: [["createdAt", "ASC"]],
+    });
+
+    return res.json({
+      success: true,
+      alreadyPaid: false,
+      report: payouts,
+    });
+
+
+  } catch (err) {
+    console.error("getUnpaidPayouts error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
